@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Auswertung – Heidi Dark</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#3D3D3F}
+a{color:#EDEDEF;text-decoration:none}
+.dn a{display:flex;align-items:center;gap:14px;min-height:44px;padding:0 12px;border-radius:10px;color:#C9C9D0;font-size:16px}
+.dn a:hover{background:#1C1C20;color:#FFFFFF}
+.ib{width:44px;height:44px;border-radius:10px;border:1px solid #2A2A30;background:#141416;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#C9C9D0}
+.chip{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 14px;border:1px solid #2A2A30;border-radius:10px;background:#111113;color:#EDEDEF;font:inherit;font-size:15px;cursor:pointer}
+</style>
+</helmet>
+<div style="font-family:Inter,system-ui,sans-serif;color:#EDEDEF;background:#3D3D3F;min-height:1420px;padding:40px;box-sizing:border-box">
+<div style="background:#0B0B0D;border-radius:34px;padding:14px;display:flex;flex-wrap:wrap;gap:14px;max-width:1420px;margin:0 auto;box-shadow:0 30px 60px rgba(0,0,0,0.35)">
+
+<aside style="flex:1 1 230px;max-width:280px;min-width:220px;padding:18px 6px 6px;box-sizing:border-box;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;gap:12px;padding:0 12px 16px">
+<span style="width:30px;height:30px;border-radius:9px;background:#7356F1;display:flex;align-items:center;justify-content:center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg></span>
+<span style="font-size:20px;font-weight:500;flex:1">Heidi</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9A9AA3" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 9l4-4 4 4M8 15l4 4 4-4"></path></svg>
+</div>
+<nav class="dn" aria-label="Start" style="display:flex;flex-direction:column;gap:2px">
+<a href="#"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"></path></svg>Start</a>
+<a href="#"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"></path></svg>Frag Heidi</a>
+</nav>
+<div style="font-family:'Geist Mono',monospace;font-size:13px;letter-spacing:0.14em;color:#9A9AA3;padding:16px 12px 6px">AUSWERTUNG</div>
+<nav class="dn" aria-label="Auswertung" style="display:flex;flex-direction:column;gap:2px">
+<a href="#" style="background:#1E1E23;color:#FFFFFF"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"></rect><path d="M9 4V3h6v1M9 10h6M9 14h4"></path></svg>Ziele</a>
+<a href="#"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9h-9z"></path><path d="M15 3.5A9 9 0 0 1 20.5 9H15z"></path></svg>Berichte</a>
+<a href="HeidiDarkChat.dc.html"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M6 12h3l2-4 2 8 2-4h3"></path></svg>Gesprächsverlauf</a>
+</nav>
+<div style="font-family:'Geist Mono',monospace;font-size:13px;letter-spacing:0.14em;color:#9A9AA3;padding:16px 12px 6px">HEIDI</div>
+<nav class="dn" aria-label="Heidi" style="display:flex;flex-direction:column;gap:2px">
+<a href="#"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h12v18H6a2 2 0 0 1-2-2z"></path><path d="M8 7h6M8 11h6"></path></svg>Wissen &amp; FAQ</a>
+<a href="#"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 4h16v12H8l-4 4z"></path><path d="M8 9h8"></path></svg>Vorlagen</a>
+<a href="#"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg>Termine</a>
+<a href="#"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0"></path></svg>Erinnerungen</a>
+<a href="#"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"></path></svg>Links &amp; Formulare</a>
+</nav>
+<div style="font-family:'Geist Mono',monospace;font-size:13px;letter-spacing:0.14em;color:#9A9AA3;padding:16px 12px 6px">KONTAKTE</div>
+<nav class="dn" aria-label="Kontakte" style="display:flex;flex-direction:column;gap:2px">
+<a href="#"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="9" cy="8" r="3.5"></circle><path d="M3 20c.8-3.5 3.3-5 6-5s5.2 1.5 6 5M16 5.5a3.5 3.5 0 0 1 0 6M18 15c1.6.6 2.6 2.2 3 5"></path></svg>Kontakte</a>
+<a href="#"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"></path></svg>Gruppen</a>
+</nav>
+<div style="margin-top:auto;display:flex;flex-direction:column;gap:2px;padding-top:24px">
+<nav class="dn" aria-label="Hilfe" style="display:flex;flex-direction:column;gap:2px">
+<a href="#"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5M12 17h.01"></path></svg>Hilfe</a>
+<a href="#"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg>Einstellungen</a>
+</nav>
+<div style="display:flex;align-items:center;gap:12px;margin-top:10px;padding:10px;border:1px solid #2A2A30;border-radius:14px;background:#141416">
+<span style="width:38px;height:38px;border-radius:10px;background:#1E1E23;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px">FM</span>
+<span style="flex:1;font-size:15px;font-weight:500">Fahrschule Muster</span>
+<span style="font-size:13px;font-weight:600;color:#FFFFFF;background:#7356F1;border-radius:7px;padding:3px 8px">Pro</span>
+</div>
+</div>
+</aside>
+
+<main style="flex:999 1 620px;min-width:0;background:#141416;border:1px solid #222227;border-radius:22px;display:flex;flex-direction:column">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:14px 18px 14px 24px;border-bottom:1px solid #222227">
+<span style="font-size:16px;color:#9A9AA3">Ziele <span style="margin:0 6px">·</span> <b style="color:#EDEDEF;font-weight:500">Erreichbar nach Feierabend</b></span>
+<label style="display:flex;align-items:center;gap:10px;flex:1 1 220px;max-width:340px;min-height:44px;padding:0 6px 0 12px;border:1px solid #2A2A30;border-radius:10px;background:#0F0F11">
+<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#9A9AA3" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+<span style="position:absolute;left:-9999px">Suchen</span>
+<input type="search" placeholder="Suchen …" style="flex:1;min-width:0;border:0;outline:0;background:transparent;color:#EDEDEF;font:inherit;font-size:16px">
+<span style="font-family:'Geist Mono',monospace;font-size:12px;color:#C9C9D0;background:#222227;border-radius:6px;padding:4px 7px">⌘K</span>
+</label>
+<span style="margin-left:auto;font-size:15px;color:#9A9AA3">Hilfe?</span>
+<button type="button" class="ib" aria-label="Benachrichtigungen" style="position:relative"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 20a2 2 0 0 0 4 0"></path></svg><span style="position:absolute;top:9px;right:11px;width:7px;height:7px;border-radius:4px;background:#F04438"></span></button>
+<button type="button" class="ib" aria-label="Einstellungen"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"></path></svg></button>
+</div>
+
+<div style="padding:24px 24px 26px;display:flex;flex-direction:column;gap:22px">
+<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:12px">
+<div>
+<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><h1 style="margin:0;font-size:32px;font-weight:500;letter-spacing:-0.02em">Erreichbar nach Feierabend</h1><span style="display:flex;align-items:center;gap:6px;font-size:14px;color:#4ADE80;border:1px solid #2A2A30;border-radius:7px;padding:3px 9px"><span style="width:6px;height:6px;border-radius:3px;background:#22C55E"></span>aktiv</span></div>
+<p style="margin:8px 0 0;font-size:18px;color:#9A9AA3">Jede Anfrage beantworten – auch wenn das Büro zu ist · <span style="color:#C9C9D0">Beispieldaten</span></p>
+</div>
+<button type="button" style="display:flex;align-items:center;gap:8px;min-height:46px;padding:0 16px;border:1px solid #2A2A30;border-radius:10px;background:#111113;color:#EDEDEF;font:inherit;font-size:16px;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path></svg>Bearbeiten</button>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px">
+<section style="border:1px solid #26262B;border-radius:18px;background:#17171A">
+<h2 style="margin:0;display:flex;align-items:center;gap:12px;font-size:22px;font-weight:500;padding:18px 24px;border-bottom:1px solid #26262B"><svg width="22" height="22" viewBox="0 0 24 24" fill="#F5B83D" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"></path></svg>Beantwortet</h2>
+<div style="padding:22px 26px 26px"><div style="font-size:58px;font-weight:600;letter-spacing:-0.04em;line-height:1">1.312</div><div style="font-size:18px;color:#9A9AA3;margin-top:16px">Anfragen nach 18 Uhr beantwortet in den <b style="color:#C9C9D0;font-weight:500">letzten 30 Tagen</b></div></div>
+</section>
+<section style="border:1px solid #26262B;border-radius:18px;background:#17171A">
+<h2 style="margin:0;display:flex;align-items:center;gap:12px;font-size:22px;font-weight:500;padding:18px 24px;border-bottom:1px solid #26262B"><span style="width:22px;height:22px;border-radius:11px;background:#22C55E;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0B0B0D" stroke-width="3.5" stroke-linecap="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"></path></svg></span>Wirkung</h2>
+<div style="padding:22px 26px 26px"><div style="font-size:58px;font-weight:600;letter-spacing:-0.04em;line-height:1">41</div><div style="font-size:18px;color:#9A9AA3;margin-top:16px">Anmeldungen über Heidi gestartet in den <b style="color:#C9C9D0;font-weight:500">letzten 30 Tagen</b></div></div>
+</section>
+</div>
+
+<section style="border:1px solid #26262B;border-radius:18px;background:#17171A;padding:20px 24px 22px">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:16px">
+<h2 style="margin:0 auto 0 0;font-size:20px;font-weight:500">Verlauf</h2>
+<sc-for list="{{series}}" as="s" hint-placeholder-count="2">
+<button type="button" class="chip" onClick="{{s.pick}}" aria-pressed="{{s.active}}"><span style="width:16px;height:16px;border-radius:4px;background:{{s.sq}};border:1px solid #3A3A42"></span>{{s.label}}</button>
+</sc-for>
+<span style="width:12px"></span>
+<button type="button" class="chip">Täglich<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+</div>
+<div style="display:flex;gap:12px">
+<div style="display:flex;flex-direction:column;justify-content:space-between;font-family:'Geist Mono',monospace;font-size:13px;color:#9A9AA3;text-align:right;height:252px;padding-bottom:2px">
+<sc-for list="{{yl}}" as="y" hint-placeholder-count="4"><span>{{y}}</span></sc-for>
+</div>
+<div role="img" aria-label="{{chartAria}}" style="flex:1;min-width:0;display:grid;grid-template-columns:repeat(42,minmax(0,1fr));gap:3px;height:252px;align-items:end">
+<sc-for list="{{cols}}" as="c" hint-placeholder-count="42">
+<span style="display:flex;flex-direction:column-reverse;gap:3px">
+<sc-for list="{{c.dots}}" as="d" hint-placeholder-count="14"><span style="display:block;height:15px;border-radius:2px;background:{{d}}"></span></sc-for>
+</span>
+</sc-for>
+</div>
+</div>
+<div style="display:flex;justify-content:space-between;font-family:'Geist Mono',monospace;font-size:13px;color:#9A9AA3;margin:10px 0 0 60px"><span>14. Okt</span><span>21. Okt</span><span>28. Okt</span><span>4. Nov</span><span>11. Nov</span><span>24. Nov</span></div>
+</section>
+
+<section style="border:1px solid #26262B;border-radius:18px;background:#17171A;padding:18px 18px 8px">
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px;padding:0 4px">
+<h2 style="margin:0 auto 0 0;font-size:20px;font-weight:500">Was Heidi erledigt</h2>
+<button type="button" class="chip">Quellen</button><button type="button" class="chip">Einstellungen</button>
+</div>
+<div style="overflow-x:auto">
+<table style="width:100%;min-width:640px;border-collapse:collapse;font-size:16px">
+<thead><tr style="background:#202025;font-family:'Geist Mono',monospace;font-size:13px;letter-spacing:0.08em;color:#9A9AA3"><th style="text-align:left;font-weight:400;padding:12px 14px;border-radius:10px 0 0 10px">BAUSTEIN</th><th style="font-weight:400;padding:12px 8px"></th><th style="text-align:right;font-weight:400;padding:12px 8px">ANZAHL</th><th style="text-align:right;font-weight:400;padding:12px 8px">ANTEIL</th><th style="text-align:right;font-weight:400;padding:12px 14px;border-radius:0 10px 10px 0">WIRKUNG</th></tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+<tr style="border-bottom:1px solid #26262B">
+<td style="padding:14px"><span style="display:flex;align-items:center;gap:12px"><span style="width:34px;height:34px;border-radius:8px;border:1px solid #2A2A30;display:flex;align-items:center;justify-content:center;font-size:15px;color:#C9C9D0">{{r.icon}}</span>{{r.name}}</span></td>
+<td style="padding:14px 8px;text-align:right"><span style="display:inline-flex;align-items:center;gap:6px;font-size:14px;color:{{r.sc}};border:1px solid #2A2A30;border-radius:7px;padding:4px 10px"><span style="width:6px;height:6px;border-radius:3px;background:{{r.sd}}"></span>{{r.status}}</span></td>
+<td style="padding:14px 8px;text-align:right">{{r.n}}</td>
+<td style="padding:14px 8px;text-align:right">{{r.p}}</td>
+<td style="padding:14px;text-align:right;font-weight:600">{{r.w}}</td>
+</tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</main>
+
+<aside style="flex:1 1 320px;max-width:400px;min-width:0;background:#141416;border:1px solid #222227;border-radius:22px;display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;gap:10px;padding:14px 16px 14px 24px;border-bottom:1px solid #222227">
+<span style="font-size:17px;font-weight:500;flex:1">Heidi</span>
+<button type="button" class="ib" aria-label="Verlauf"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4h16v12H8l-4 4z"></path><path d="M8 9h8M8 12h5"></path></svg></button>
+<button type="button" class="ib" aria-label="Vergrößern"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"></path></svg></button>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;padding:60px 24px 20px;text-align:center">
+<span style="width:72px;height:72px;border-radius:36px;border:1px solid #2A2A30;background:#111113;display:flex;align-items:center;justify-content:center"><svg width="30" height="30" viewBox="0 0 24 24" fill="#9B85F4" aria-hidden="true"><path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"></path></svg></span>
+<h2 style="margin:22px 0 8px;font-size:28px;font-weight:500;letter-spacing:-0.02em">Guten Morgen, Sandra</h2>
+<p style="margin:0;font-size:17px;color:#9A9AA3;line-height:1.5">Frag mich alles zu euren Gesprächen.</p>
+<div style="display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin-top:28px">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="5">
+<button type="button" class="chip" onClick="{{c.pick}}"><span style="color:{{c.ic}};font-size:16px" aria-hidden="true">{{c.icon}}</span>{{c.label}}</button>
+</sc-for>
+</div>
+<sc-if value="{{hasAsk}}" hint-placeholder-val="{{ false }}">
+<div style="align-self:stretch;margin-top:24px;text-align:left;font-size:15px;line-height:1.55">
+<div style="margin-left:40px;background:#202025;border-radius:14px;padding:12px 14px">{{ask}}</div>
+<div style="display:flex;gap:10px;margin-top:14px"><span style="width:26px;height:26px;border-radius:13px;background:#7356F1;flex:none;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"></path></svg></span><span style="color:#C9C9D0">{{answer}}</span></div>
+</div>
+</sc-if>
+</div>
+<div style="margin:16px;border:1px solid #2A2A30;border-radius:16px;background:#111113;padding:14px 14px 10px">
+<label for="hq" style="position:absolute;left:-9999px">Frage an Heidi</label>
+<textarea id="hq" rows="2" placeholder="Wie kann ich helfen?" style="width:100%;box-sizing:border-box;border:0;outline:0;background:transparent;color:#EDEDEF;font:inherit;font-size:17px;resize:none"></textarea>
+<div style="display:flex;justify-content:flex-end;align-items:center;gap:8px"><button type="button" aria-label="Anhang" style="width:36px;height:36px;border:0;background:transparent;color:#C9C9D0;font-size:20px;cursor:pointer">+</button><button type="button" aria-label="Senden" style="width:36px;height:36px;border-radius:9px;border:0;background:#7356F1;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"></path></svg></button></div>
+</div>
+</aside>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1420}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { series: 'Anfragen', ask: null }; }
+  renderVals() {
+    const s = this.state, V = '#7356F1', OFF = '#1F1F24';
+    const isA = s.series === 'Anfragen';
+    const cols = [];
+    for (let i = 0; i < 42; i++) {
+      const wk = i % 7;
+      let v = isA ? 4 + (wk === 4 || wk === 5 ? 2 : 0) + Math.round(3 * Math.abs(Math.sin(i * 0.8))) + Math.floor(i / 10)
+                  : 1 + Math.round(3 * Math.abs(Math.sin(i * 0.55 + 1))) + (i % 9 === 3 ? 5 : 0) + Math.floor(i / 14);
+      v = Math.min(14, v);
+      const dots = [];
+      for (let r = 0; r < 14; r++) dots.push(r < v ? V : OFF);
+      cols.push({ dots });
+    }
+    const chipsData = [
+      ['?', '#9B85F4', 'Was fragen Kunden nachts?', 'Nach 20 Uhr geht es meist um Preise für Klasse B (38×) und freie Plätze im Ferienkurs (14×).'],
+      ['◎', '#4ADE80', 'FAQ-Lücken finden', '4 Fragen konnte ich nicht beantworten: Termine Ferienkurs 2027 und Umschreibung ausländischer Führerscheine.'],
+      ['◷', '#F5B83D', 'Erinnerung planen', 'Ich kann allen 6 Schülern mit Theorieprüfung nächste Woche am Vortag eine Erinnerung schicken. Soll ich?'],
+      ['▤', '#C9C9D0', 'Wochenbericht', '214 Gespräche, 94 % sofort beantwortet, 23 Termine gebucht, 3 Übergaben offen.'],
+      ['✎', '#9B85F4', 'Vorlage erstellen', 'Gern – für welchen Anlass? Zum Beispiel Prüfungserinnerung oder Ferienkurs-Ankündigung.']
+    ];
+    return {
+      series: ['Anfragen','Anmeldungen'].map(l => ({ label: l, active: s.series === l, sq: s.series === l ? V : '#1F1F24', pick: () => this.setState({ series: l }) })),
+      yl: isA ? ['70','45','20','0'] : ['14','9','4','0'],
+      chartAria: isA ? 'Anfragen nach Feierabend pro Tag, leicht steigend' : 'Über Heidi gestartete Anmeldungen pro Tag',
+      cols,
+      rows: [
+        { icon: '?', name: 'FAQ-Antworten', status: 'Läuft', sc: '#4ADE80', sd: '#22C55E', n: '842', p: '64,2 %', w: '−38 Std. Büro' },
+        { icon: '◷', name: 'Terminbuchung', status: 'Aktiv', sc: '#B9A8F8', sd: V, n: '94', p: '7,2 %', w: '94 Termine' },
+        { icon: '↗', name: 'Anmeldelink', status: 'Läuft', sc: '#4ADE80', sd: '#22C55E', n: '57', p: '4,3 %', w: '41 Anmeldungen' },
+        { icon: '◔', name: 'Erinnerung Theorieprüfung', status: 'Aktiv', sc: '#B9A8F8', sd: V, n: '36', p: '2,7 %', w: '−6 No-Shows' }
+      ],
+      chips: chipsData.map(c => ({ icon: c[0], ic: c[1], label: c[2], pick: () => this.setState({ ask: c }) })),
+      hasAsk: !!s.ask,
+      ask: s.ask ? s.ask[2] : '',
+      answer: s.ask ? s.ask[3] : ''
+    };
+  }
+}
+</script>
+</body>
+</html>
