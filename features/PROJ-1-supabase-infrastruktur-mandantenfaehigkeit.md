@@ -1,8 +1,8 @@
 # PROJ-1: Supabase-Infrastruktur & Mandantenfähigkeit
 
-## Status: Planned
+## Status: Architected
 **Created:** 2026-11-25
-**Last Updated:** 2026-11-25
+**Last Updated:** 2026-11-25 (Tech Design ergänzt)
 **Priorität:** P0 (MVP)
 
 ## Dependencies
@@ -168,8 +168,8 @@ Ein Nutzerkonto kann Mitgliedschaften in **mehreren** Mandanten haben, je mit ei
 
 ## Open Questions
 
-- [ ] Gültigkeitsdauer des Anmeldelinks: 60 Minuten (Supabase-Standard) oder kürzer? Zu kurz ist im Büroalltag lästig, zu lang ist ein Risiko bei geteilten Postfächern.
-- [ ] Sitzungsdauer bis zur erneuten Anmeldung: 30 Tage bequem, 7 Tage sicherer — was passt zum Fahrschulbüro?
+- [x] Gültigkeitsdauer des Anmeldelinks — **entschieden am 2026-11-25: 60 Minuten**, dafür nur einmal verwendbar und mit Versandbremse.
+- [x] Sitzungsdauer — **entschieden am 2026-11-25: 30 Tage, gleitend verlängert.**
 - [ ] Über welchen Dienst gehen die Anmelde-E-Mails? Supabase-Standardversand reicht für den Pilot, braucht aber für Zustellraten und eigenen Absender später einen EU-Dienst (Entscheidung gehört zu PROJ-8, betrifft aber schon hier die Zustellung).
 - [ ] Darf ein `tenant_admin` einen Mitarbeiter wieder entfernen, dessen Chats noch offen sind — oder muss er die Gespräche vorher übergeben? (Berührt PROJ-7.)
 - [ ] Braucht das Zugriffsprotokoll eine eigene Aufbewahrungsfrist, oder gilt die allgemeine aus PROJ-10?
@@ -195,12 +195,218 @@ Ein Nutzerkonto kann Mitgliedschaften in **mehreren** Mandanten haben, je mit ei
 <!-- Added by /architecture -->
 | Decision | Rationale | Date |
 |----------|-----------|------|
+| Mandantentrennung über Zeilen-Zugriffsregeln der Datenbank, nicht über Filter in der Anwendung | Eine einzige vergessene Filterbedingung in einer von hunderten künftigen Abfragen wäre ein meldepflichtiger Vorfall über Kundengrenzen. Die Datenbank verzeiht Vergessen | 2026-11-25 |
+| Automatisierter Test prüft jede Tabelle auf aktive Zugriffsregeln | Macht die Konvention überprüfbar statt nur vereinbart; eine neu angelegte Tabelle ohne Schutz fällt vor dem Deploy auf | 2026-11-25 |
+| Berechtigung hängt an der Mitgliedschaft (Mensch + Betrieb), nicht am Nutzerkonto | Grundlage für Mitarbeiter in mehreren Betrieben und für je eigene Rollen darin | 2026-11-25 |
+| `platform_admin` als Merkmal am Profil statt als vierte Rolle in der Mitgliedschaft | AWSMD steht über allen Betrieben; als Mitgliedschaft wäre bei jedem neuen Kunden ein Eintrag mitzupflegen | 2026-11-25 |
+| Support-Einblick ist Teil derselben Zugriffsregel wie die Mitgliedschaft | Der Zugriff endet beim Ablauf von selbst; es gibt keinen Schalter, dessen Umlegen man vergessen könnte | 2026-11-25 |
+| Zugriffsprotokoll ist nur anfügbar, Änderung und Löschung durch Regeln verboten | Ein Protokoll, das der Protokollierte löschen kann, ist kein Protokoll — und genau das muss gegenüber dem Kunden belastbar sein | 2026-11-25 |
+| Aktiver Betrieb wird serverseitig aus dem Profil gelesen, nicht aus einem Browserwert | Ein Wert im Browser ließe sich auf eine fremde Betriebskennung ändern. Die Zugriffsregeln würden das abfangen, aber es käme zu halb geladenen fremden Ansichten | 2026-11-25 |
+| Anmeldelink 60 Minuten gültig, aber nur einmal verwendbar, plus Versandbremse | Nutzerentscheidung gegen 15 Minuten. Die Einmalverwendung begrenzt das Risiko im geteilten Büropostfach, weil der Link beim Öffnen verbraucht ist | 2026-11-25 |
+| Sitzung 30 Tage, gleitend verlängert | Das Postfach ist das tägliche Arbeitswerkzeug; häufige Neuanmeldung würde als Schikane empfunden. Unbenutzte Geräte verlieren den Zugang von selbst | 2026-11-25 |
+| Unbekannte E-Mail erhält dieselbe Antwort wie eine bekannte | Sonst wäre die Anmeldeseite ein Werkzeug, um die Kundenliste von AWSMD abzufragen | 2026-11-25 |
+| `@supabase/ssr` wird ergänzt | Ohne serverseitig gültige Anmeldung kennt der Server den Nutzer nicht — darauf beruht das gesamte Schutzkonzept | 2026-11-25 |
+| Supabase CLI für versionierte Datenbankänderungen | Von Hand im Dashboard gepflegtes Schema ist nach wenigen Monaten nicht mehr rekonstruierbar | 2026-11-25 |
+| Dienstschlüssel nur serverseitig, mit Testprüfung gegen Auslieferung an den Browser | Der Dienstschlüssel umgeht alle Zugriffsregeln; im Browser wäre er ein Generalschlüssel für alle Mandanten | 2026-11-25 |
+| Minimale Admin-Seite zum Anlegen von Betrieb und erstem Admin | Ohne sie ließe sich die Mandantentrennung kaum praktisch testen; sie wächst in PROJ-3 zur vollen Kundenverwaltung | 2026-11-25 |
 
 ---
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+**Erstellt:** 2026-11-25
+
+### Worum es hier geht
+
+PROJ-1 baut kein sichtbares Produkt, sondern die Zusage, auf der alles andere steht: Daten
+eines Kunden sind für andere Kunden unerreichbar, und AWSMD kommt an Inhalte nur, wenn der
+Kunde es erlaubt. Deshalb liegt der Schwerpunkt dieses Designs nicht auf der Oberfläche,
+sondern darauf, **wo** die Trennung erzwungen wird.
+
+### Grundentscheidung: Die Datenbank bewacht sich selbst
+
+Es gibt zwei Orte, an denen man Mandanten trennen kann:
+
+1. **In der Anwendung** — jede Abfrage filtert nach dem Betrieb des angemeldeten Nutzers.
+   Billig zu bauen. Aber: *eine* vergessene Filterbedingung in *einer* Abfrage, irgendwann
+   in den nächsten zwei Jahren, und ein Kunde sieht die Daten eines anderen. Das ist ein
+   meldepflichtiger Datenschutzvorfall und das Ende der Verkaufsgeschichte.
+2. **In der Datenbank** — die Datenbank kennt den angemeldeten Nutzer und gibt von sich aus
+   nur Zeilen heraus, für die er eine Mitgliedschaft hat. Eine vergessene Filterbedingung
+   ist dann harmlos, weil die Datenbank ohnehin nichts anderes herausgibt.
+
+Wir nehmen Weg 2. Supabase bringt das mit (Zeilen-Zugriffsregeln, „Row Level Security").
+Die Mehrarbeit fällt einmal an, der Schutz gilt für jede künftige Tabelle und jede künftige
+Abfrage — auch für die, die noch niemand geschrieben hat.
+
+**Begleitende Zusicherung:** Ein automatisierter Test geht alle Tabellen der Datenbank
+durch und schlägt fehl, sobald eine davon keine aktiven Zugriffsregeln hat. Damit kann man
+die Absicherung nicht versehentlich vergessen — man wird daran erinnert, bevor etwas live geht.
+
+### Komponentenstruktur
+
+```
+Öffentlicher Bereich
++-- Anmeldeseite
+|   +-- E-Mail-Feld + Senden
+|   +-- Bestätigung „Link verschickt" (mit Hinweis auf den Spam-Ordner)
+|   +-- Erneut-senden-Schalter (erst nach 60 Sekunden aktiv)
++-- Rückkehrseite (der Link aus der E-Mail landet hier)
+    +-- Erfolg -> Weiterleitung in den Betrieb
+    +-- Link abgelaufen -> Hinweis + neuen anfordern
+    +-- Link schon benutzt -> Hinweis + neuen anfordern
+
+Zugangskontrolle (liegt um den gesamten geschützten Bereich)
++-- Prüft: angemeldet? -> sonst Anmeldeseite, Zielseite wird gemerkt
++-- Prüft: Mitgliedschaft oder Plattform-Admin? -> sonst Hinweisseite
++-- Prüft: Betrieb aktiv? -> sonst Seite „Betrieb gesperrt"
+
+Geschützter Bereich
++-- Kopfzeile
+|   +-- Mandantenwechsler (erscheint nur bei mehr als einem Betrieb)
+|   +-- Nutzermenü -> Abmelden
++-- Inhaltsfläche (bleibt in PROJ-1 fast leer; PROJ-2 gestaltet sie,
+|                  PROJ-4 bis PROJ-9 füllen sie)
++-- Startseite mit Begrüßung und Name des aktiven Betriebs
+
+Nur für Plattform-Admin (AWSMD)
++-- Betriebsübersicht
+|   +-- Liste aller Betriebe mit Status
+|   +-- „Neuen Betrieb anlegen" (Name + E-Mail des ersten Admins)
++-- Betrieb sperren / entsperren
+
+Nur für Kunden-Admin
++-- Support-Einblick
+|   +-- Aktueller Zustand (keiner / aktiv bis <Zeitpunkt>)
+|   +-- „24 Stunden freigeben" / „Sofort widerrufen"
++-- Zugriffsprotokoll (nur lesbar, nicht löschbar)
+
+Hinweisseiten
++-- „Du bist noch keinem Betrieb zugeordnet"
++-- „Dieser Betrieb ist derzeit gesperrt"
++-- Störungsseite (Datenbank nicht erreichbar)
+```
+
+Alle Bausteine entstehen aus bereits installierten shadcn/ui-Komponenten (Button, Input,
+Card, Dialog, Table, Dropdown-Menu, Sonner für Hinweise, Form für die Eingabeprüfung).
+Es wird keine eigene Variante einer vorhandenen Komponente gebaut.
+
+### Datenmodell in Klartext
+
+**Betrieb** — ein Kunde von AWSMD, zum Beispiel „Fahrschule Muster"
+- eigene Kennung
+- Name, Kurzname für das Kürzel in der Seitenleiste
+- Zustand: aktiv oder gesperrt
+- angelegt am
+
+**Profil** — ein Mensch mit einem Zugang
+- eigene Kennung, identisch mit der Kennung aus der Anmeldung
+- E-Mail-Adresse, Name
+- Merkmal „Plattform-Admin": ja oder nein
+- zuletzt genutzter Betrieb
+
+**Mitgliedschaft** — verbindet Profil und Betrieb, **die eigentliche Berechtigung**
+- Profil, Betrieb
+- Rolle in diesem Betrieb: Kunden-Admin oder Mitarbeiter
+- eingeladen am, zum ersten Mal angemeldet am
+- Zustand: eingeladen oder aktiv
+
+Ein Mensch kann mehrere Mitgliedschaften haben, in jedem Betrieb mit eigener Rolle. Die
+Rolle hängt also nicht am Menschen, sondern an der Kombination Mensch + Betrieb.
+
+**Support-Freigabe** — die befristete Ausnahme
+- Betrieb, wer freigegeben hat
+- Beginn, Ende (Beginn plus 24 Stunden)
+- widerrufen am (leer, solange nicht widerrufen)
+
+**Zugriffsprotokoll** — was AWSMD getan hat
+- Betrieb, handelndes Konto, Zeitpunkt
+- betroffener Bereich und Art des Zugriffs
+- **nur anfügbar**: niemand kann Einträge ändern oder löschen, auch AWSMD nicht.
+  Technisch durch Zugriffsregeln erzwungen, nicht durch eine Absprache.
+
+**Verbindliche Konvention für alle künftigen Tabellen:** Jede Tabelle, die Kundendaten
+enthält, trägt die Kennung des Betriebs als Pflichtfeld und hat Zugriffsregeln, die auf
+eine bestehende Mitgliedschaft prüfen. Das gilt für Wissensbasis (PROJ-4), Nachrichten
+(PROJ-5), Gespräche (PROJ-7), Termine (PROJ-12) und alles danach.
+
+**Gespeichert in:** Supabase PostgreSQL, Region Frankfurt. Kein Browserspeicher für
+Kundendaten.
+
+### Wie die drei Rollen technisch wirken
+
+- **Mitarbeiter und Kunden-Admin** unterscheiden sich allein durch die Rolle in ihrer
+  Mitgliedschaft. Die Zugriffsregeln der Datenbank lesen diese Rolle; die Oberfläche blendet
+  zusätzlich aus, was ohnehin abgewiesen würde. Das Ausblenden ist Komfort, die Regel ist
+  der Schutz.
+- **Plattform-Admin** darf Betriebe und Kennzahlen sehen, aber Inhalte nur, solange eine
+  Support-Freigabe läuft. Das steckt in derselben Zugriffsregel: Zugriff auf Inhalte
+  erfordert entweder eine Mitgliedschaft **oder** eine gültige, nicht widerrufene Freigabe.
+  Läuft die Freigabe ab, hört der Zugriff ohne weiteres Zutun auf — es gibt keinen Schalter,
+  den man vergessen könnte umzulegen.
+
+### Wie der Mandantenwechsel getragen wird
+
+Der aktive Betrieb wird **serverseitig** aus dem Profil gelesen, nicht aus einem Wert im
+Browser. Der Grund ist unangenehm einfach: läge er im Browser, könnte man ihn dort auf die
+Kennung eines fremden Betriebs ändern. Beim Wechsel schreibt der Server „zuletzt genutzter
+Betrieb" ins Profil — und nur, wenn für diesen Betrieb eine Mitgliedschaft besteht. Die
+Zugriffsregeln würden einen manipulierten Wert ohnehin abfangen; dieser Aufbau sorgt dafür,
+dass es gar nicht erst zu einer halb geladenen, fremden Ansicht kommt.
+
+### Anmeldung: Ablauf in Worten
+
+1. Nutzer trägt seine E-Mail ein. Die Seite antwortet immer gleich — ob die Adresse bekannt
+   ist oder nicht. Sonst wäre die Anmeldeseite ein Werkzeug, um die Kundenliste von AWSMD
+   herauszufinden.
+2. Supabase Auth verschickt den Anmeldelink. Gültig **60 Minuten**, verwendbar **genau
+   einmal**. Mehr als drei Anfragen pro Minute und Adresse werden abgewiesen.
+3. Nutzer klickt, landet auf der Rückkehrseite, die Sitzung entsteht.
+4. Der Server ermittelt die Mitgliedschaften und leitet weiter: ein Betrieb → direkt hinein;
+   mehrere → in den zuletzt genutzten; keiner und kein Plattform-Admin → Hinweisseite.
+5. Die Sitzung hält **30 Tage und verlängert sich bei jeder Nutzung**. Wer täglich im
+   Postfach arbeitet, meldet sich praktisch nie neu an; ein 30 Tage unbenutztes Gerät
+   verliert den Zugang von selbst.
+
+### Dienste und Pakete
+
+Bereits vorhanden und ausreichend:
+- `@supabase/supabase-js` — liegt im Projekt, muss in `src/lib/supabase.ts` nur noch
+  aktiviert werden
+- shadcn/ui-Komponenten, `react-hook-form` und `zod` für die Eingabeprüfung,
+  `sonner` für Hinweise, `next-themes` (erst für PROJ-2 relevant)
+
+Neu hinzuzufügen:
+- **`@supabase/ssr`** — nötig, damit die Anmeldung in Next.js auch serverseitig gilt.
+  Ohne dieses Paket kennt der Server den angemeldeten Nutzer nicht, und genau darauf beruht
+  das ganze Schutzkonzept.
+- **Supabase CLI** (nur Entwicklungswerkzeug) — für nachvollziehbare, versionierte
+  Datenbankänderungen. Ohne sie wird das Schema im Dashboard von Hand gepflegt und ist
+  nach drei Monaten nicht mehr rekonstruierbar.
+
+Ausdrücklich **nicht** nötig: eine zusätzliche Bibliothek für Berechtigungen, ein eigener
+Anmeldedienst, eine Zustandsverwaltung wie Redux.
+
+### Was von AWSMD gebraucht wird, bevor gebaut werden kann
+
+- Supabase-Projekt in der Region Frankfurt (`eu-central-1`), angelegt von dir
+- Projekt-URL und die beiden Schlüssel (öffentlicher Schlüssel, Dienstschlüssel) als
+  Umgebungsvariablen. Der Dienstschlüssel wird ausschließlich serverseitig verwendet und
+  nie an den Browser ausgeliefert.
+- Eine E-Mail-Absenderadresse für die Anmeldelinks. Für den Pilot genügt der
+  Supabase-Standardversand; für eigenen Absender und bessere Zustellraten kommt in PROJ-8
+  ein EU-Versanddienst dazu.
+
+### Risiken und wie wir damit umgehen
+
+| Risiko | Umgang |
+|--------|--------|
+| 60 Minuten gültiger Link in einem geteilten Büropostfach | Link ist nur **einmal** verwendbar und wird beim Öffnen verbraucht; zusätzlich Versandbremse. Das war eine bewusste Abwägung gegen 15 Minuten — Bequemlichkeit hat hier gewonnen, das Risiko ist benannt |
+| Entwickler legt später eine Tabelle ohne Zugriffsregeln an | Automatisierter Test prüft alle Tabellen und schlägt fehl |
+| Dienstschlüssel gelangt versehentlich in den Browser | Schlüssel wird nur in serverseitigem Code gelesen; eine Prüfung im Test stellt sicher, dass er in keinem Browser-Bündel auftaucht |
+| Zugriffsregeln machen Abfragen langsam | Die Prüfung läuft über die Betriebskennung, die auf jeder Tabelle liegt und indiziert wird. Bei den erwarteten Datenmengen (ein Betrieb: einige Tausend Nachrichten pro Monat) unkritisch |
+| Supabase-Standardversand landet im Spam | Hinweis auf den Spam-Ordner direkt in der Bestätigung; eigener Absender folgt in PROJ-8 |
 
 ## QA Test Results
 _To be added by /qa_
