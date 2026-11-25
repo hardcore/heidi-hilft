@@ -14,6 +14,17 @@
 | `SUPABASE_SERVICE_ROLE_KEY` | **nur Server** | Dienstschlüssel. Umgeht alle Zugriffsregeln. Nur für Betrieb anlegen und Nutzer einladen |
 | `NEXT_PUBLIC_SITE_URL` | Browser + Server | Basis-Adresse für den Rücklauf des Anmeldelinks. Bewusst aus der Konfiguration und nicht aus dem Host-Header, damit die Weiterleitung nicht umgelenkt werden kann |
 
+## Nur lokal, nur für Migrationen
+
+| Variable | Zweck |
+|----------|-------|
+| `DB_URL` | Verbindungszeichenfolge für `./scripts/db-apply.sh`. Supabase-Dashboard → **Connect** → **Session pooler** (nicht Transaction pooler). Gehört nur in `.env.local`, niemals zu Vercel |
+
+`scripts/db-apply.sh` liest diese Zeile selbst aus `.env.local`, wendet alle Migrationen
+an und trägt sie in den Supabase-Migrationsverlauf ein. Mit `--with-tests` laufen
+anschließend die SQL-Prüfungen. Der Wert wird nicht ausgegeben: Claude Code darf `.env*`
+nicht lesen, und das Skript läuft in deiner Shell.
+
 ## Der Dienstschlüssel
 
 `SUPABASE_SERVICE_ROLE_KEY` ist ein Generalschlüssel für **alle** Mandanten. Regeln:
