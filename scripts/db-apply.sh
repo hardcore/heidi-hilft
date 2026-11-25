@@ -28,20 +28,30 @@ fi
 
 ENV_FILE="${ENV_FILE:-.env.local}"
 
+# Reihenfolge nach Eignung: DB_URL ist die ausdrueckliche Wahl, danach die Namen,
+# die die Vercel-Supabase-Integration anlegt. POSTGRES_URL steht zuletzt, weil er
+# meist auf den Transaction pooler zeigt.
+DB_URL_NAMES="DB_URL SUPABASE_DB_URL DATABASE_URL POSTGRES_URL_NON_POOLING POSTGRES_URL"
+
 # 1. Umgebung  2. .env.local  3. verdeckte Eingabe
 if [ -z "${DB_URL:-}" ] && [ -f "$ENV_FILE" ]; then
-  DB_URL="$(
-    grep -m1 -E '^[[:space:]]*(DB_URL|SUPABASE_DB_URL)[[:space:]]*=' "$ENV_FILE" 2>/dev/null \
-      | sed -E 's/^[^=]*=[[:space:]]*//; s/^"(.*)"$/\1/; s/^'"'"'(.*)'"'"'$/\1/' \
-      || true
-  )"
-  if [ -n "${DB_URL:-}" ]; then
-    echo "Verbindung aus ${ENV_FILE} gelesen (Wert wird nicht angezeigt)."
-  fi
+  for name in $DB_URL_NAMES; do
+    value="$(
+      grep -m1 -E "^[[:space:]]*(export[[:space:]]+)?${name}[[:space:]]*=" "$ENV_FILE" 2>/dev/null \
+        | sed -E 's/^[^=]*=[[:space:]]*//; s/[[:space:]]+$//; s/^"(.*)"$/\1/; s/^'"'"'(.*)'"'"'$/\1/' \
+        || true
+    )"
+    if [ -n "$value" ]; then
+      DB_URL="$value"
+      # Nur der NAME wird genannt, nie der Wert.
+      echo "Verbindung aus ${ENV_FILE} gelesen, Variable ${name} (Wert wird nicht angezeigt)."
+      break
+    fi
+  done
 fi
 
 if [ -z "${DB_URL:-}" ]; then
-  echo "Keine Zeile DB_URL= in ${ENV_FILE} gefunden." >&2
+  echo "In ${ENV_FILE} wurde keine dieser Variablen gefunden: ${DB_URL_NAMES}" >&2
   printf 'Supabase Session-Pooler-URL (verdeckt): ' >&2
   read -rs DB_URL
   printf '\n' >&2
