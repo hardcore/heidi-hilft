@@ -21,7 +21,7 @@ Erster Markt sind Fahrschulen, später Friseure, Physiotherapie-Praxen und Handw
 
 | Priorität | Feature | Status |
 |-----------|---------|--------|
-| P0 (MVP) | Supabase-Infrastruktur & Mandantenfähigkeit | Roadmap |
+| P0 (MVP) | Supabase-Infrastruktur & Mandantenfähigkeit | Planned |
 | P0 (MVP) | Design-System & App-Shell (hell + dunkel) | Roadmap |
 | P0 (MVP) | Kunden- & Nutzerverwaltung (Admin) | Roadmap |
 | P0 (MVP) | Wissensbasis & FAQ-Pflege | Roadmap |
