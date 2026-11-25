@@ -15,7 +15,7 @@
 
 | ID | Feature | Beschreibung | Prio | Abhängigkeiten | Status | Spec | Created |
 |----|---------|--------------|------|----------------|--------|------|---------|
-| PROJ-1 | Supabase-Infrastruktur & Mandantenfähigkeit | Supabase-Projekt Frankfurt, Datenbankschema mit `tenant_id` auf jedem Datensatz, RLS-Policies, Auth, Rollen (platform_admin / tenant_admin / tenant_member) | P0 | keine | Architected | [Spec](PROJ-1-supabase-infrastruktur-mandantenfaehigkeit.md) | 2026-11-25 |
+| PROJ-1 | Supabase-Infrastruktur & Mandantenfähigkeit | Supabase-Projekt Frankfurt, Datenbankschema mit `tenant_id` auf jedem Datensatz, RLS-Policies, Auth, Rollen (platform_admin / tenant_admin / tenant_member) | P0 | keine | In Progress | [Spec](PROJ-1-supabase-infrastruktur-mandantenfaehigkeit.md) | 2026-11-25 |
 | PROJ-2 | Design-System & App-Shell | CSS-Variablen für hell und dunkel nach `prefers-color-scheme`, Theme-Umschalter, Inter + Geist Mono, Sidebar, Topbar, Panel-Layout gemäß `docs/design-system.md` | P0 | keine | Roadmap | – | 2026-11-25 |
 | PROJ-3 | Kunden- & Nutzerverwaltung (Admin) | Plattform-Admin legt Kunden an, lädt Kunden-Admins und Mitarbeiter ein, verwaltet Rollen und Status; Kunden-Admin verwaltet sein Team | P0 | PROJ-1, PROJ-2 | Roadmap | – | 2026-11-25 |
 | PROJ-4 | Wissensbasis & FAQ-Pflege | FAQ-Einträge und Textbausteine pflegen, Öffnungszeiten, Links und PDFs hinterlegen; Embeddings in pgvector, automatische Neuberechnung bei Änderung | P0 | PROJ-1, PROJ-2 | Roadmap | – | 2026-11-25 |

@@ -1,0 +1,54 @@
+# Supabase-Konfiguration für Heidi
+# Entscheidungen aus PROJ-1 (siehe features/PROJ-1-...md, Decision Log)
+
+project_id = "heidi-hilft"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+
+# Zugänge entstehen nur durch Einladung. Niemand registriert sich selbst –
+# im MVP legt AWSMD Betriebe und den ersten Admin an.
+enable_signup = false
+enable_anonymous_sign_ins = false
+
+# Zugriffstoken kurz, Erneuerungstoken rotierend.
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+
+[auth.sessions]
+# Entscheidung 2026-11-25: 30 Tage, gleitend.
+# Nur inactivity_timeout, kein timebox -> die Sitzung verlängert sich bei jeder Nutzung.
+inactivity_timeout = "720h"
+
+[auth.email]
+enable_signup = false
+enable_confirmations = true
+double_confirm_changes = true
+# Entscheidung 2026-11-25: Anmeldelink 60 Minuten gültig.
+# Gegenmaßnahme gegen geteilte Büropostfächer: nur einmal verwendbar (Supabase-Standard)
+# plus Versandbremse unten.
+otp_expiry = 3600
+otp_length = 8
+max_frequency = "60s"
+
+[auth.rate_limit]
+# Maximal 3 Anmeldelinks pro Stunde und Adresse (AC: Versandbremse).
+email_sent = 3
+
+[inbox]
+enabled = true
+port = 54324

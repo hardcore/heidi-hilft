@@ -1,14 +1,7 @@
-// Supabase Client Setup
-// Uncomment this file when you're ready to use Supabase
-
-/*
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
-*/
-
-// For now, export a placeholder to avoid import errors
-export const supabase = null;
+// Beibehalten für Abwärtskompatibilität mit dem Starter-Kit.
+// Neuer Code nutzt direkt:
+//   src/lib/supabase/server.ts  – Server-Komponenten und Route Handler
+//   src/lib/supabase/client.ts  – Browser
+//   src/lib/supabase/admin.ts   – Dienstschlüssel, nur serverseitig
+export { createClient as createBrowserSupabaseClient } from './supabase/client';
+export type * from './supabase/types';

@@ -1,8 +1,8 @@
 # PROJ-1: Supabase-Infrastruktur & Mandantenfähigkeit
 
-## Status: Architected
+## Status: In Progress
 **Created:** 2026-11-25
-**Last Updated:** 2026-11-25 (Tech Design ergänzt)
+**Last Updated:** 2026-11-25 (Backend gebaut)
 **Priorität:** P0 (MVP)
 
 ## Dependencies
@@ -173,6 +173,10 @@ Ein Nutzerkonto kann Mitgliedschaften in **mehreren** Mandanten haben, je mit ei
 - [ ] Über welchen Dienst gehen die Anmelde-E-Mails? Supabase-Standardversand reicht für den Pilot, braucht aber für Zustellraten und eigenen Absender später einen EU-Dienst (Entscheidung gehört zu PROJ-8, betrifft aber schon hier die Zustellung).
 - [ ] Darf ein `tenant_admin` einen Mitarbeiter wieder entfernen, dessen Chats noch offen sind — oder muss er die Gespräche vorher übergeben? (Berührt PROJ-7.)
 - [ ] Braucht das Zugriffsprotokoll eine eigene Aufbewahrungsfrist, oder gilt die allgemeine aus PROJ-10?
+- [ ] **Region des Supabase-Projekts ist unbestätigt.** Das Projekt wurde über die Vercel-Integration bereitgestellt; von hier aus ist die Region nicht einsehbar. Muss `eu-central-1` (Frankfurt) sein, sonst ist der gesamte DSGVO-Rahmen aus dem PRD verletzt — und die Region lässt sich nachträglich nicht ändern.
+- [ ] **AVV-Kette prüfen:** Supabase wurde über den Vercel-Marketplace bezogen. Damit steht Vercel als Vertragspartner für die Datenbank in der Kette, nicht nur für das Hosting. Für die Unterauftragnehmerliste und den AVV mit Kunden ist ein direkter Supabase-Vertrag sauberer.
+- [ ] **SQL-Tests noch nicht ausgeführt.** Es fehlt eine Postgres-Instanz: Docker läuft auf dem Rechner nicht, ein Testprojekt existiert nicht. Bis dahin ist die Mandantentrennung geschrieben, aber unbewiesen.
+- [ ] `npm run lint` reparieren (ESLint-9-Flat-Config) — vorhandener Mangel im Starter-Kit.
 
 ## Decision Log
 
@@ -212,6 +216,94 @@ Ein Nutzerkonto kann Mitgliedschaften in **mehreren** Mandanten haben, je mit ei
 
 ---
 <!-- Sections below are added by subsequent skills -->
+
+## Implementation Notes (Backend)
+
+**Stand:** 2026-11-25 — Backend gebaut, Oberfläche steht noch aus (PROJ-2 / Login-Seiten).
+
+### Was gebaut wurde
+
+**Datenbank** (`supabase/migrations/`)
+- `20261125120000_proj1_foundation.sql` — Tabellen `tenants`, `profiles`, `memberships`,
+  `support_grants`, `access_log`; Aufzählungstypen; Trigger für `updated_at`; Trigger, der
+  beim Entstehen eines `auth.users`-Eintrags automatisch ein Profil anlegt; Trigger
+  `assert_tenant_keeps_admin`, der verhindert, dass der letzte Kunden-Admin eines Betriebs
+  entfernt oder herabgestuft wird.
+- `20261125120100_proj1_rls.sql` — Hilfsfunktionen und alle Zugriffsregeln. `anon` bekommt
+  auf keiner Tabelle Rechte. `access_log` hat bewusst **keine** Regel für UPDATE und DELETE;
+  ohne Regel ist die Operation verboten, auch für AWSMD. Das Freigabefenster wird per
+  Trigger auf 24 Stunden festgenagelt, unabhängig davon, was die Anwendung mitschickt.
+  `guard_profile_update` verhindert Selbstbeförderung zum Plattform-Admin und den Wechsel
+  in einen Betrieb ohne Mitgliedschaft.
+- `public.can_read_tenant_content(tenant_id)` ist die Konvention für **alle** künftigen
+  Inhaltstabellen (PROJ-4 bis PROJ-12): `using (can_read_tenant_content(tenant_id))`.
+- `public.tables_without_rls()` listet jede Tabelle in `public` ohne aktives RLS. Muss
+  immer leer sein; wird im SQL-Test geprüft.
+
+**Konfiguration** (`supabase/config.toml`)
+- `enable_signup = false` — Zugänge entstehen nur durch Einladung
+- `otp_expiry = 3600` (60 Minuten, Entscheidung vom 2026-11-25), `max_frequency = "60s"`,
+  `email_sent = 3` als Versandbremse
+- `[auth.sessions] inactivity_timeout = "720h"` — 30 Tage gleitend, kein `timebox`
+
+**Anwendung**
+- `src/lib/supabase/server.ts` — Client für Server-Komponenten und Route Handler,
+  öffentlicher Schlüssel, läuft durch die Zugriffsregeln
+- `src/lib/supabase/client.ts` — Browser-Client
+- `src/lib/supabase/admin.ts` — Dienstschlüssel, bricht ab, wenn er im Browser landet
+- `src/lib/auth/session.ts` — `getSessionContext()` liest den aktiven Betrieb aus dem
+  Profil, nicht aus dem Browser; `requireTenantAdmin`, `requirePlatformAdmin`
+- `src/lib/auth/audit.ts` — Protokolleintrag ohne Inhalte, Namen oder Telefonnummern
+- `src/lib/validation/schemas.ts` — Zod-Prüfung aller Eingaben
+- `src/lib/api/respond.ts` — einheitliche Fehlerbehandlung; Datenbankfehler werden nach
+  außen nur allgemein gemeldet
+
+**API-Routen**
+
+| Route | Methode | Berechtigung |
+|-------|---------|--------------|
+| `/api/auth/magic-link` | POST | offen; antwortet für unbekannte und bekannte Adressen identisch |
+| `/api/session` | GET | offen; liefert `authenticated: false` ohne Anmeldung |
+| `/api/tenants/switch` | POST | Mitglied des Zielbetriebs oder Plattform-Admin |
+| `/api/admin/tenants` | GET, POST | nur Plattform-Admin |
+| `/api/support-grants` | POST, DELETE | nur Kunden-Admin des Betriebs |
+| `/api/access-log` | GET | Mitglied des Betriebs oder Plattform-Admin |
+
+### Tests
+
+- **32 Vitest-Tests, alle grün** (`npm test`): je Route der glückliche Pfad, 400 bei
+  ungültiger Eingabe, 401 ohne Anmeldung, 403 bei falscher Rolle oder fremdem Betrieb.
+- **SQL-Tests** (`supabase/tests/proj1_rls.test.sql`): 24 pgTAP-Prüfungen für die
+  Mandantentrennung, Rollengrenzen, das anfügbare Protokoll, den letzten Kunden-Admin,
+  Support-Freigabe samt Ablauf und Widerruf, sowie gesperrte Betriebe.
+  **Noch nicht ausgeführt** — siehe offener Punkt unten.
+- `npm run build` läuft fehlerfrei, alle sechs Routen kompilieren.
+
+### Abweichungen vom Tech Design
+
+- Zusätzlich zum geplanten Umfang kam `guard_profile_update` dazu. Beim Bauen fiel auf:
+  ohne diesen Trigger könnte ein Nutzer sein eigenes `is_platform_admin` auf `true`
+  setzen, weil die Regel `profiles_update_self` das Schreiben auf die eigene Zeile erlaubt.
+  Eine Zugriffsregel kann nicht zwischen Spalten unterscheiden, ein Trigger schon.
+- Ebenfalls ergänzt: `pin_support_grant_window` und `guard_support_grant_update`. Sonst
+  könnte die Anwendung ein beliebig langes Fenster mitschicken oder eine laufende Freigabe
+  verlängern, statt sie nur zu widerrufen.
+- Der Dienstschlüssel wird außer im Tech Design genannten Zweck auch zum Aufräumen genutzt:
+  scheitert die Einladung beim Anlegen eines Betriebs, wird der Betrieb wieder entfernt,
+  damit keine halb angelegten Kunden zurückbleiben.
+
+### Vorhandener Mangel im Starter-Kit (nicht von PROJ-1 verursacht)
+
+`npm run lint` ist unbrauchbar: Next 16 hat `next lint` entfernt, und ESLint 9 verlangt eine
+`eslint.config.js`, während das Projekt noch `.eslintrc.json` mitbringt. Die Prüfung aus der
+Backend-Checkliste konnte deshalb nicht laufen. Build und Tests laufen davon unberührt.
+
+### Umgebungsvariablen
+
+Siehe `docs/environment.md`. Bei Vercel sind `NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` und `SUPABASE_SERVICE_ROLE_KEY` über die
+Supabase-Integration gesetzt — allerdings nur für *Production* und *Preview*, nicht für
+*Development*. `NEXT_PUBLIC_SITE_URL` fehlt noch.
 
 ## Tech Design (Solution Architect)
 
