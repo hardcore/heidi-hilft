@@ -206,6 +206,13 @@ security definer
 set search_path = public, pg_temp
 as $$
 begin
+  -- Serverseitige Rollen dürfen alles. Geprüft über current_user statt über
+  -- current_setting('role'): der GUC ist nicht in allen Verbindungswegen gesetzt,
+  -- current_user ist es immer.
+  if current_user in ('postgres', 'supabase_admin', 'service_role') then
+    return new;
+  end if;
+
   if new.is_platform_admin is distinct from old.is_platform_admin then
     raise exception 'is_platform_admin kann nicht über die Anwendung geändert werden'
       using errcode = 'insufficient_privilege';
@@ -231,7 +238,6 @@ $$;
 create trigger profiles_guard_update
   before update on public.profiles
   for each row
-  when (current_setting('role', true) is distinct from 'service_role')
   execute function public.guard_profile_update();
 
 -- ---------------------------------------------------------------------------
@@ -298,8 +304,20 @@ create policy support_grants_revoke on public.support_grants
 create or replace function public.pin_support_grant_window()
 returns trigger
 language plpgsql
+security definer
+set search_path = public, pg_temp
 as $$
 begin
+  -- Abgelaufene, nicht widerrufene Freigaben schließen. Ohne das blockiert der
+  -- Unique-Index jede weitere Freigabe, sobald einmal eine abgelaufen ist.
+  -- Noch laufende Freigaben bleiben stehen und lösen bewusst einen Konflikt aus
+  -- (die Route meldet dann 409).
+  update public.support_grants
+     set revoked_at = expires_at
+   where tenant_id = new.tenant_id
+     and revoked_at is null
+     and expires_at <= now();
+
   new.granted_at := now();
   new.expires_at := now() + interval '24 hours';
   new.revoked_at := null;

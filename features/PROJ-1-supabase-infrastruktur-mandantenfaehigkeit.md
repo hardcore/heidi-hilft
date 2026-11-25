@@ -2,7 +2,7 @@
 
 ## Status: In Progress
 **Created:** 2026-11-25
-**Last Updated:** 2026-11-25 (Backend gebaut)
+**Last Updated:** 2026-11-25 (Backend gebaut, Migrationen korrigiert)
 **Priorität:** P0 (MVP)
 
 ## Dependencies
@@ -173,9 +173,10 @@ Ein Nutzerkonto kann Mitgliedschaften in **mehreren** Mandanten haben, je mit ei
 - [ ] Über welchen Dienst gehen die Anmelde-E-Mails? Supabase-Standardversand reicht für den Pilot, braucht aber für Zustellraten und eigenen Absender später einen EU-Dienst (Entscheidung gehört zu PROJ-8, betrifft aber schon hier die Zustellung).
 - [ ] Darf ein `tenant_admin` einen Mitarbeiter wieder entfernen, dessen Chats noch offen sind — oder muss er die Gespräche vorher übergeben? (Berührt PROJ-7.)
 - [ ] Braucht das Zugriffsprotokoll eine eigene Aufbewahrungsfrist, oder gilt die allgemeine aus PROJ-10?
-- [ ] **Region des Supabase-Projekts ist unbestätigt.** Das Projekt wurde über die Vercel-Integration bereitgestellt; von hier aus ist die Region nicht einsehbar. Muss `eu-central-1` (Frankfurt) sein, sonst ist der gesamte DSGVO-Rahmen aus dem PRD verletzt — und die Region lässt sich nachträglich nicht ändern.
+- [x] **Region des Supabase-Projekts** — bestätigt am 2026-11-25: Frankfurt (`eu-central-1`).
 - [ ] **AVV-Kette prüfen:** Supabase wurde über den Vercel-Marketplace bezogen. Damit steht Vercel als Vertragspartner für die Datenbank in der Kette, nicht nur für das Hosting. Für die Unterauftragnehmerliste und den AVV mit Kunden ist ein direkter Supabase-Vertrag sauberer.
-- [ ] **SQL-Tests noch nicht ausgeführt.** Es fehlt eine Postgres-Instanz: Docker läuft auf dem Rechner nicht, ein Testprojekt existiert nicht. Bis dahin ist die Mandantentrennung geschrieben, aber unbewiesen.
+- [ ] **SQL-Tests noch nicht ausgeführt.** Es fehlt eine erreichbare Postgres-Instanz: Docker läuft auf dem Rechner nicht, und Claude Code hat keinen Zugriff auf die Verbindungsdaten (`.env*` ist gesperrt). Bis zur Ausführung ist die Mandantentrennung geschrieben, aber unbewiesen.
+- [ ] **Auth-Einstellungen am Remote-Projekt setzen.** `supabase/config.toml` wirkt auf die lokale Instanz. Ob die neuere CLI sie per `supabase config push` auch remote anwendet, ist zu prüfen; andernfalls müssen Anmeldelink-Gültigkeit (60 Min), Sitzungsdauer (30 Tage gleitend), `enable_signup = false` und die Versandbremse im Supabase-Dashboard eingetragen werden.
 - [ ] `npm run lint` reparieren (ESLint-9-Flat-Config) — vorhandener Mangel im Starter-Kit.
 
 ## Decision Log
@@ -291,6 +292,31 @@ Ein Nutzerkonto kann Mitgliedschaften in **mehreren** Mandanten haben, je mit ei
 - Der Dienstschlüssel wird außer im Tech Design genannten Zweck auch zum Aufräumen genutzt:
   scheitert die Einladung beim Anlegen eines Betriebs, wird der Betrieb wieder entfernt,
   damit keine halb angelegten Kunden zurückbleiben.
+
+### Nachträgliche Korrekturen vor dem ersten Anwenden (2026-11-25)
+
+Beim erneuten Durchlesen der Migrationen vor dem Anwenden auf das echte Projekt fielen drei
+Fehler auf. Alle drei hätten die SQL-Tests gefangen, die zu diesem Zeitpunkt noch nicht
+laufen konnten — ein Beleg dafür, dass ungeprüfte Zugriffsregeln nicht als geprüfte gelten
+dürfen. Die Migrationen waren noch nirgends angewendet, deshalb wurden sie direkt
+korrigiert statt durch Folgemigrationen ergänzt.
+
+1. **`assert_tenant_keeps_admin` wäre bei jedem Löschen abgebrochen.** Die Funktion las
+   `new.tenant_id`; bei `DELETE` ist `NEW` in PL/pgSQL nicht belegt, der Zugriff bricht ab.
+   Zusätzlich gab sie `new` zurück — ein BEFORE-DELETE-Trigger muss `old` zurückgeben,
+   sonst wird das Löschen stillschweigend verworfen. Ergebnis wäre gewesen: **kein**
+   Mitarbeiter hätte je aus einem Betrieb entfernt werden können.
+2. **Eine abgelaufene Support-Freigabe hätte jede weitere blockiert.** Der Unique-Index
+   greift auf „nicht widerrufen", und ein Index-Prädikat kann `now()` nicht auswerten.
+   Nach der ersten abgelaufenen Freigabe hätte der Betrieb nie wieder eine erteilen können.
+   Gelöst im Trigger `pin_support_grant_window`, der abgelaufene Freigaben schließt;
+   noch laufende lösen weiterhin bewusst einen Konflikt aus (409).
+3. **Die Erkennung serverseitiger Rollen war unzuverlässig.** Die WHEN-Bedingung des
+   Triggers prüfte `current_setting('role')`, das nicht über alle Verbindungswege gesetzt
+   ist. Jetzt prüft die Funktion `current_user` gegen `postgres`, `supabase_admin` und
+   `service_role`.
+
+Dazu zwei weitere SQL-Prüfungen (jetzt 26), die den Ablauf-Fall abdecken.
 
 ### Vorhandener Mangel im Starter-Kit (nicht von PROJ-1 verursacht)
 

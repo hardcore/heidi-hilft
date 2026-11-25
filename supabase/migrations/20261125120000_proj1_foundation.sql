@@ -85,13 +85,13 @@ set search_path = public, pg_temp
 as $$
 declare
   remaining integer;
-  affected_tenant uuid;
 begin
-  affected_tenant := coalesce(old.tenant_id, new.tenant_id);
-
+  -- Beide Trigger feuern nur, wenn OLD.role = 'tenant_admin' war.
+  -- NEW wird hier absichtlich NICHT für die Mandantenkennung gelesen: bei DELETE
+  -- ist NEW nicht belegt, und ein Zugriff darauf bricht die Funktion ab.
   select count(*) into remaining
   from public.memberships m
-  where m.tenant_id = affected_tenant
+  where m.tenant_id = old.tenant_id
     and m.role = 'tenant_admin'
     and m.id <> old.id;
 
@@ -102,6 +102,12 @@ begin
   if remaining = 0 then
     raise exception 'Der letzte Kunden-Admin eines Betriebs kann nicht entfernt oder herabgestuft werden'
       using errcode = 'check_violation';
+  end if;
+
+  -- Ein BEFORE-DELETE-Trigger muss OLD zurückgeben. NULL würde das Löschen
+  -- stillschweigend abbrechen, NEW ist bei DELETE nicht belegt.
+  if tg_op = 'DELETE' then
+    return old;
   end if;
 
   return new;
@@ -137,8 +143,12 @@ create table public.support_grants (
 comment on table public.support_grants is 'Befristeter Inhaltszugriff für AWSMD, freigegeben durch einen tenant_admin. 24 Stunden.';
 
 create index support_grants_tenant_idx on public.support_grants (tenant_id);
--- Nur eine laufende Freigabe pro Betrieb
-create unique index support_grants_one_active_per_tenant
+-- Höchstens eine offene Freigabe pro Betrieb.
+-- Der Index kann now() nicht auswerten (nicht immutable), deshalb greift er auf
+-- "nicht widerrufen". Abgelaufene Freigaben werden beim nächsten Freigabeversuch
+-- vom Trigger geschlossen (siehe pin_support_grant_window), sonst könnte ein
+-- Betrieb nach 24 Stunden nie wieder eine Freigabe erteilen.
+create unique index support_grants_one_open_per_tenant
   on public.support_grants (tenant_id)
   where revoked_at is null;
 

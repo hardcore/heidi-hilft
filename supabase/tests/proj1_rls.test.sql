@@ -11,7 +11,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(24);
+select plan(26);
 
 -- ---------------------------------------------------------------------------
 -- Testdaten
@@ -267,6 +267,41 @@ select pg_temp.act_as('cccccccc-0000-0000-0000-000000000001');
 select ok(
   not public.can_read_tenant_content('22222222-2222-2222-2222-222222222222'),
   'Nach Widerruf endet der Inhaltszugriff sofort'
+);
+
+-- ---------------------------------------------------------------------------
+-- Eine ABGELAUFENE Freigabe darf keine neue blockieren.
+-- (Der Unique-Index kann now() nicht auswerten; das Schließen übernimmt der
+--  Trigger pin_support_grant_window.)
+-- ---------------------------------------------------------------------------
+
+-- Laufende Freigabe von Alpha anlegen und künstlich altern lassen.
+select pg_temp.act_as('aaaaaaaa-0000-0000-0000-000000000001');
+insert into public.support_grants (tenant_id, granted_by, expires_at)
+  values ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001', now());
+
+reset role;
+alter table public.support_grants disable trigger support_grants_guard_update;
+update public.support_grants
+   set granted_at = now() - interval '48 hours',
+       expires_at = now() - interval '24 hours'
+ where tenant_id = '11111111-1111-1111-1111-111111111111';
+alter table public.support_grants enable trigger support_grants_guard_update;
+
+select pg_temp.act_as('aaaaaaaa-0000-0000-0000-000000000001');
+
+select lives_ok(
+  $$insert into public.support_grants (tenant_id, granted_by, expires_at)
+    values ('11111111-1111-1111-1111-111111111111', 'aaaaaaaa-0000-0000-0000-000000000001', now())$$,
+  'Nach Ablauf kann derselbe Betrieb erneut eine Freigabe erteilen'
+);
+
+select results_eq(
+  $$select count(*)::int from public.support_grants
+     where tenant_id = '11111111-1111-1111-1111-111111111111'
+       and revoked_at is null$$,
+  array[1],
+  'Die abgelaufene Freigabe wurde geschlossen, es bleibt genau eine offene'
 );
 
 -- ===========================================================================
