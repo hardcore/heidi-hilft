@@ -35,8 +35,11 @@ export async function POST(request: NextRequest) {
 
     // Versandbremse von Supabase durchreichen (AC: mehr als drei Links pro Minute).
     if (error?.status === 429) {
+      // Nicht "in einer Minute" versprechen: der eingebaute Mailversand von
+      // Supabase ist auf 2 Mails pro Stunde FUERS GANZE PROJEKT begrenzt, nicht
+      // pro Adresse. Mit eigenem SMTP gilt die Minuten-Bremse.
       return fail(
-        'Du hast gerade mehrere Links angefordert. Bitte versuche es in einer Minute erneut.',
+        'Es wurden gerade zu viele Anmeldelinks angefordert. Bitte versuche es später noch einmal.',
         429,
       );
     }

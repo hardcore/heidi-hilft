@@ -12,6 +12,8 @@ const FEHLERTEXTE: Record<string, string> = {
     'Dieser Anmeldelink wurde schon verwendet. Jeder Link lässt sich nur einmal benutzen. Fordere unten einen neuen an.',
   ungueltig:
     'Mit diesem Link konnten wir dich nicht anmelden. Fordere unten einen neuen an.',
+  anderergeraet:
+    'Dieser Link konnte in diesem Browser nicht eingelöst werden. Fordere unten einen neuen an und öffne ihn auf demselben Gerät.',
   abgemeldet: 'Du bist abgemeldet.',
 };
 

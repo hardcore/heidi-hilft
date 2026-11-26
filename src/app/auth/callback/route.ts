@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import type { EmailOtpType } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 
 /** Nur projektinterne Pfade zulassen – sonst wäre das eine offene Weiterleitung. */
@@ -37,14 +38,25 @@ export async function GET(request: NextRequest) {
 
   let fehler: { code?: string; message: string } | null = null;
 
-  if (code) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    fehler = error ? { code: error.code, message: error.message } : null;
-  } else if (tokenHash && typ) {
+  // token_hash hat Vorrang vor code.
+  //
+  // Der PKCE-Weg (`code`) funktioniert nur in dem Browser, der die Anmeldung
+  // angefordert hat - dort liegt der zugehoerige Pruefwert im Cookie. Das trifft
+  // zwei Faelle nicht: eine Einladung, die serverseitig erzeugt wurde, und einen
+  // Link, der auf einem anderen Geraet geoeffnet wird. Beides ist in der Spec
+  // ausdruecklich gefordert.
+  //
+  // Voraussetzung: Die E-Mail-Vorlagen in Supabase verlinken auf
+  // {{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=...
+  // Siehe docs/supabase-setup.md.
+  if (tokenHash && typ) {
     const { error } = await supabase.auth.verifyOtp({
-      type: typ as 'magiclink' | 'email' | 'invite' | 'recovery',
+      type: typ as EmailOtpType,
       token_hash: tokenHash,
     });
+    fehler = error ? { code: error.code, message: error.message } : null;
+  } else if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
     fehler = error ? { code: error.code, message: error.message } : null;
   } else {
     return NextResponse.redirect(new URL('/anmelden?fehler=ungueltig', origin));
@@ -73,5 +85,11 @@ function einordnen(code: string, beschreibung: string): string {
   const text = `${code} ${beschreibung}`.toLowerCase();
   if (text.includes('expired')) return 'abgelaufen';
   if (text.includes('already') || text.includes('used')) return 'verbraucht';
+  // Tritt auf, wenn der Link in einem anderen Browser geoeffnet wird und die
+  // Vorlagen noch den PKCE-Weg nutzen. Eigener Hinweis, damit das nicht als
+  // "ungueltiger Link" missverstanden wird.
+  if (text.includes('code verifier') || text.includes('code_verifier')) {
+    return 'anderergeraet';
+  }
   return 'ungueltig';
 }

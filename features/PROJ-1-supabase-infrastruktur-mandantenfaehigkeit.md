@@ -2,7 +2,7 @@
 
 ## Status: In Progress
 **Created:** 2026-11-25
-**Last Updated:** 2026-11-26 (Frontend gebaut, Supabase eingerichtet, Tarifgrenzen dokumentiert)
+**Last Updated:** 2026-11-26 (erster echter Durchlauf, PKCE-Befund behoben)
 **Priorität:** P0 (MVP)
 
 ## Dependencies
@@ -171,7 +171,9 @@ Ein Nutzerkonto kann Mitgliedschaften in **mehreren** Mandanten haben, je mit ei
 - [x] Gültigkeitsdauer des Anmeldelinks — **entschieden am 2026-11-25: 60 Minuten**, dafür nur einmal verwendbar und mit Versandbremse.
 - [x] Sitzungsdauer — **entschieden am 2026-11-25: 30 Tage, gleitend verlängert.**
 - [x] **Maildienst — entschieden am 2026-11-26: Resend.** Als Custom SMTP in Supabase (`smtp.resend.com`, Benutzer `resend`, Passwort = API-Key, Port 465 oder 587), Domain `heidi-hilft.de` zu verifizieren. Bewusste Abwägung: Resends Region „Ireland" betrifft nur den Versandort, Kontodaten und Logs liegen laut Doku in den USA, alle 23 Unterauftragnehmer sind US-Firmen, Metadaten 30 Tage. Betroffen sind ausschließlich dienstliche Adressen von Mitarbeitenden, keine Endkundendaten, und Benachrichtigungen enthalten keine Nachrichteninhalte. Resend gehört in die Unterauftragnehmerliste und in den AVV (PROJ-10). Der PRD-Satz zur EU-Datenhaltung wurde entsprechend präzisiert.
-- [ ] SMTP-Zugang in Supabase eintragen und Domain bei Resend verifizieren — danach gilt die Versandbremse wie spezifiziert.
+- [ ] SMTP-Zugang in Supabase eintragen und Domain bei Resend verifizieren — danach gilt die Versandbremse wie spezifiziert. Anleitung: `docs/supabase-setup.md`.
+- [ ] E-Mail-Vorlagen in Supabase auf `token_hash` umstellen, sonst scheitern Einladungen und Links, die auf einem anderen Gerät geöffnet werden.
+- [ ] Einladung für den ersten Kunden-Admin erneut verschicken, sobald beides steht.
 - [ ] **Sitzungen laufen derzeit nie ab.** Entweder Pro-Plan oder eine eigene Inaktivitätsprüfung in der Middleware. Vor dem ersten echten Kunden zu entscheiden.
 - [ ] Darf ein `tenant_admin` einen Mitarbeiter wieder entfernen, dessen Chats noch offen sind — oder muss er die Gespräche vorher übergeben? (Berührt PROJ-7.)
 - [ ] Braucht das Zugriffsprotokoll eine eigene Aufbewahrungsfrist, oder gilt die allgemeine aus PROJ-10?
@@ -352,6 +354,35 @@ Abweichung; korrigiert auf 28.
 **Lehre für die weiteren Features:** Die Zugriffsregeln für PROJ-4 bis PROJ-12 gelten erst
 als fertig, wenn ihre SQL-Prüfungen gegen eine echte Datenbank gelaufen sind. Zwei der drei
 Befunde — darunter eine Rechteausweitung — waren beim Lesen des Codes nicht zu sehen.
+
+### Befund aus dem ersten echten Durchlauf (2026-11-26)
+
+Der Plattform-Admin meldete sich an, legte über die Oberfläche den Betrieb
+„Fahrschule Siegel" an und löste damit die Einladung des ersten Kunden-Admins aus — alles
+wie vorgesehen. Der Klick auf die Einladungsmail meldete den Eingeladenen aber **nicht** an.
+
+**Ursache: PKCE passt nicht zu Einladungen.** Supabase verlinkt in den Vorlagen
+voreingestellt auf `{{ .ConfirmationURL }}`, was über den PKCE-Weg läuft. Der funktioniert
+nur in dem Browser, der die Anmeldung angefordert hat — dort liegt der Prüfwert im Cookie.
+Eine serverseitig erzeugte Einladung hat diesen Prüfwert nie gesetzt, also scheitert das
+Einlösen.
+
+Derselbe Mechanismus hätte auch den dokumentierten Edge Case gebrochen: „Anmeldelink wird
+in einem anderen Browser geöffnet → die Anmeldung funktioniert". Mit PKCE funktioniert
+genau das nicht. Die Spec forderte etwas, das die Voreinstellung nicht leisten kann.
+
+**Behoben in zwei Schritten**
+1. Die Rücklaufseite wertet jetzt `token_hash` **vor** `code` aus und fällt nur noch darauf
+   zurück. Ein eigener Hinweis unterscheidet „in diesem Browser nicht einlösbar" von
+   „ungültiger Link".
+2. Die E-Mail-Vorlagen in Supabase müssen auf
+   `{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=...` umgestellt werden.
+   Anleitung: `docs/supabase-setup.md`. **Das ist eine Dashboard-Einstellung und damit
+   nicht im Repository versioniert** — bei einem neuen Supabase-Projekt erneut zu setzen.
+
+**Zweiter Befund: die Fehlermeldung zur Versandbremse war falsch.** Sie versprach „in einer
+Minute", tatsächlich greift beim eingebauten Versand eine Grenze von 2 Mails pro Stunde
+fürs ganze Projekt. Text korrigiert; die Minuten-Bremse gilt erst mit eigenem SMTP.
 
 ### Abweichungen durch den Supabase-Tarif (2026-11-26)
 
