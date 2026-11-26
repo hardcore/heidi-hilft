@@ -2,7 +2,7 @@
 
 ## Status: In Progress
 **Created:** 2026-11-25
-**Last Updated:** 2026-11-26 (Migrationen angewendet, 28 SQL-Tests grün)
+**Last Updated:** 2026-11-26 (Frontend gebaut, 35 Vitest- und 30 SQL-Tests grün)
 **Priorität:** P0 (MVP)
 
 ## Dependencies
@@ -279,7 +279,8 @@ Ein Nutzerkonto kann Mitgliedschaften in **mehreren** Mandanten haben, je mit ei
   Abgedeckt: Mandantentrennung, Rechte der Rolle `anon`, Rollengrenzen, das anfügbare
   Protokoll, der letzte Kunden-Admin, Support-Freigabe samt Ablauf und Widerruf,
   gesperrte Betriebe und die Pflichtprüfung auf Tabellen ohne RLS.
-  Ausführen mit `./scripts/db-apply.sh --with-tests`.
+  Ausführen mit `./scripts/db-apply.sh --with-tests`. Mit der Aktivierungsfunktion
+  sind es inzwischen **30 Prüfungen**.
 - `npm run build` läuft fehlerfrei, alle sechs Routen kompilieren.
 
 ### Abweichungen vom Tech Design
@@ -362,6 +363,75 @@ Siehe `docs/environment.md`. Bei Vercel sind `NEXT_PUBLIC_SUPABASE_URL`,
 `NEXT_PUBLIC_SUPABASE_ANON_KEY` und `SUPABASE_SERVICE_ROLE_KEY` über die
 Supabase-Integration gesetzt — allerdings nur für *Production* und *Preview*, nicht für
 *Development*. `NEXT_PUBLIC_SITE_URL` fehlt noch.
+
+## Implementation Notes (Frontend)
+
+**Stand:** 2026-11-26 — Oberfläche gebaut und im Browser geprüft.
+
+Bewusst schlicht gehalten: Design-System, Sidebar, Topbar und Theme-Umschaltung sind
+laut Out of Scope **PROJ-2**. Hier geht es nur darum, dass Anmeldung und Zugangskontrolle
+tragen. Übernommen wurden aus `docs/design-system.md` nur die Dinge, die ohnehin feststehen
+und später kein Umbauen erfordern: die Schrift Inter, `lang="de"`, 44-px-Klickflächen und
+das violette Markenzeichen in der Kopfzeile.
+
+### Seiten
+
+| Pfad | Zweck |
+|------|-------|
+| `/anmelden` | E-Mail eintragen, Anmeldelink anfordern; zeigt die Hinweise der Rückkehrseite |
+| `/auth/callback` | Rücklauf des Anmeldelinks; tauscht `code` bzw. `token_hash` gegen eine Sitzung, aktiviert Einladungen, leitet zum gemerkten Ziel |
+| `/` | Startseite im geschützten Bereich |
+| `/verwaltung/betriebe` | Betriebsübersicht und Anlegen (nur Plattform-Admin) |
+| `/einstellungen/zugriff` | Support-Freigabe und Zugriffsprotokoll (nur Kunden-Admin) |
+| `/kein-betrieb` | Hinweisseite ohne Mitgliedschaft |
+| `/betrieb-gesperrt` | Hinweisseite für gesperrte Betriebe, mit Wechsler zu anderen Betrieben |
+
+### Dreifache Zugangskontrolle
+
+1. **Middleware** (`src/middleware.ts`) erneuert die Sitzung bei jeder Anfrage und schickt
+   Nicht-Angemeldete zur Anmeldung, mit der Zielseite als `weiter`-Parameter.
+2. **Layout des geschützten Bereichs** entscheidet über Mitgliedschaft und Zustand des
+   Betriebs und leitet auf die passende Hinweisseite.
+3. **Zugriffsregeln der Datenbank** sind die eigentliche Sicherung. Die beiden Schichten
+   darüber sorgen für sinnvolle Seiten statt leerer Listen.
+
+Die Sitzungsprüfung nutzt überall `getUser()`, nie `getSession()`: `getSession()` vertraut
+dem Cookie, `getUser()` prüft das Token gegen Supabase.
+
+### Beim Bauen ergänzt
+
+- **`activate_my_memberships()`** (Migration `20261126091000`). Die Admin-Route legt
+  Mitgliedschaften mit Status `invited` an, `is_member_of()` verlangt aber `active` — ein
+  eingeladener Kunden-Admin wäre nach dem Klick auf seinen Anmeldelink in einer leeren
+  Anwendung gelandet. Umgesetzt als `security definer`-Funktion, die ausschließlich auf
+  `auth.uid()` wirkt, nicht über den Dienstschlüssel: der würde alle Regeln umgehen, und
+  der Anmeldeweg ist der letzte Ort, an dem man das will. Zwei SQL-Prüfungen belegen, dass
+  fremde Einladungen unberührt bleiben.
+- **Schutz gegen offene Weiterleitung.** Das gemerkte Ziel (`weiter`) wird im Zod-Schema
+  und zusätzlich in der Rückkehrseite geprüft: nur Pfade, die mit `/` beginnen und nicht
+  mit `//`. Ohne das ließe sich mit einem Anmeldelink auf eine fremde Seite umleiten.
+  Drei Tests decken das ab.
+- **Abmelden als POST**, damit kein Vorschau-Abruf eines Links den Nutzer abmeldet.
+- **Freigabe wird abgefragt, Widerruf nicht.** Die gefährliche Richtung bekommt einen
+  Dialog, der sagt, was AWSMD dann sieht; die sichere Richtung braucht keine Hürde.
+
+### Geprüft
+
+- **35 Vitest-Tests grün** (`npm test`), darunter die drei neuen zur Weiterleitung
+- **30 SQL-Prüfungen grün** gegen das echte Projekt in Frankfurt
+- `npm run build` fehlerfrei, 15 Routen plus Middleware
+- Im Browser durchgespielt: Anmeldeseite lädt; eine **unbekannte** Adresse erhält dieselbe
+  Bestätigung wie eine bekannte (kein Rückschluss auf die Kundenliste möglich);
+  `/verwaltung/betriebe` ohne Anmeldung leitet auf `/anmelden?weiter=%2Fverwaltung%2Fbetriebe`;
+  keine Fehler in der Browser-Konsole
+
+### Nicht geprüft
+
+Der Anmeldelink selbst wurde **nicht** durchgeklickt — dafür braucht es ein echtes Postfach
+und einen eingerichteten Zugang. Ungeprüft sind damit: Rücklauf mit gültigem Link,
+Aktivierung der Einladung im Zusammenspiel, Mandantenwechsel in der Oberfläche,
+Betriebsübersicht, Support-Freigabe und Protokollansicht. Das ist Sache von `/qa`, sobald
+der erste Betrieb angelegt ist.
 
 ## Tech Design (Solution Architect)
 

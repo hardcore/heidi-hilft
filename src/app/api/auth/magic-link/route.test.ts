@@ -62,6 +62,34 @@ describe('POST /api/auth/magic-link', () => {
     expect(JSON.stringify(body)).not.toContain('unbekannt');
   });
 
+  it('reicht ein projektinternes Ziel an die Ruecklaufadresse weiter', async () => {
+    await POST(request({ email: 'buero@fahrschule.test', weiter: '/einstellungen/zugriff' }));
+
+    const argumente = stubs.client!.auth.signInWithOtp.mock.calls[0][0];
+    expect(argumente.options.emailRedirectTo).toContain('/auth/callback');
+    expect(argumente.options.emailRedirectTo).toContain(
+      'weiter=%2Feinstellungen%2Fzugriff',
+    );
+  });
+
+  it('weist eine fremde Adresse als Ziel ab (offene Weiterleitung)', async () => {
+    const response = await POST(
+      request({ email: 'buero@fahrschule.test', weiter: 'https://angreifer.test/' }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(stubs.client!.auth.signInWithOtp).not.toHaveBeenCalled();
+  });
+
+  it('weist ein protokollrelatives Ziel ab (//angreifer.test)', async () => {
+    const response = await POST(
+      request({ email: 'buero@fahrschule.test', weiter: '//angreifer.test/' }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(stubs.client!.auth.signInWithOtp).not.toHaveBeenCalled();
+  });
+
   it('gibt die Versandbremse als 429 weiter', async () => {
     stubs.client = createSupabaseStub({
       __otp: { data: null, error: { code: 'over_email_send_rate_limit', status: 429 } },

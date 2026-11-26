@@ -11,7 +11,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(28);
+select plan(30);
 
 -- ---------------------------------------------------------------------------
 -- Testdaten
@@ -322,6 +322,43 @@ select ok(
 select isnt_empty(
   $$select id from public.tenants where id = '33333333-3333-3333-3333-333333333333'$$,
   'Der gesperrte Betrieb bleibt sichtbar, damit die Hinweisseite angezeigt werden kann'
+);
+
+-- ===========================================================================
+-- 9. Einladung aktiviert sich beim ersten Anmelden - aber nur die eigene
+-- ===========================================================================
+
+-- Beta-Admin laedt einen Mitarbeiter ein (Status 'invited').
+select pg_temp.act_as('bbbbbbbb-0000-0000-0000-000000000001');
+insert into public.memberships (tenant_id, profile_id, role, status) values
+  ('22222222-2222-2222-2222-222222222222', 'cccccccc-0000-0000-0000-000000000001', 'tenant_member', 'invited');
+
+-- Der Eingeladene meldet sich an und ruft die Aktivierung auf.
+select pg_temp.act_as('cccccccc-0000-0000-0000-000000000001');
+select public.activate_my_memberships();
+
+select results_eq(
+  $$select status::text from public.memberships
+     where profile_id = 'cccccccc-0000-0000-0000-000000000001'
+       and tenant_id = '22222222-2222-2222-2222-222222222222'$$,
+  array['active'],
+  'Die eigene Einladung wird beim ersten Anmelden aktiv'
+);
+
+-- Alpha hat noch eine eingeladene Mitgliedschaft, die NICHT betroffen sein darf.
+reset role;
+insert into public.memberships (tenant_id, profile_id, role, status) values
+  ('11111111-1111-1111-1111-111111111111', 'bbbbbbbb-0000-0000-0000-000000000001', 'tenant_member', 'invited');
+
+select pg_temp.act_as('cccccccc-0000-0000-0000-000000000001');
+select public.activate_my_memberships();
+
+select results_eq(
+  $$select status::text from public.memberships
+     where profile_id = 'bbbbbbbb-0000-0000-0000-000000000001'
+       and tenant_id = '11111111-1111-1111-1111-111111111111'$$,
+  array['invited'],
+  'Fremde Einladungen bleiben unberuehrt - die Funktion wirkt nur auf auth.uid()'
 );
 
 select * from finish();

@@ -5,9 +5,11 @@ import { fail, handleError, ok } from '@/lib/api/respond';
 
 /** Zieladresse für den Rücklauf. Bewusst aus der Konfiguration, nicht aus dem
  *  Host-Header der Anfrage – sonst ließe sich die Weiterleitung umlenken. */
-function callbackUrl(): string {
+function callbackUrl(weiter?: string): string {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
-  return `${base.replace(/\/$/, '')}/auth/callback`;
+  const url = new URL('/auth/callback', base);
+  if (weiter) url.searchParams.set('weiter', weiter);
+  return url.toString();
 }
 
 /**
@@ -20,14 +22,14 @@ function callbackUrl(): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { email } = magicLinkSchema.parse(body);
+    const { email, weiter } = magicLinkSchema.parse(body);
 
     const supabase = await createClient();
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: callbackUrl(),
+        emailRedirectTo: callbackUrl(weiter),
       },
     });
 

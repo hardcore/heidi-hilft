@@ -9,6 +9,13 @@ export const magicLinkSchema = z.object({
     .max(254, 'Diese E-Mail-Adresse ist zu lang')
     .email('Das sieht nicht wie eine E-Mail-Adresse aus')
     .transform((value) => value.toLowerCase()),
+  // Zielseite nach der Anmeldung. Nur projektinterne Pfade, damit daraus keine
+  // offene Weiterleitung wird.
+  weiter: z
+    .string()
+    .max(512)
+    .refine((v) => v.startsWith('/') && !v.startsWith('//'), 'Ungültiges Ziel')
+    .optional(),
 });
 
 /** Wechsel des aktiven Betriebs. */
