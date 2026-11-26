@@ -11,7 +11,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(26);
+select plan(28);
 
 -- ---------------------------------------------------------------------------
 -- Testdaten
@@ -130,9 +130,13 @@ select throws_ok(
 
 select pg_temp.act_as_anon();
 
-select is_empty('select id from public.tenants',        'Anonym sieht keine Betriebe');
-select is_empty('select id from public.memberships',    'Anonym sieht keine Mitgliedschaften');
-select is_empty('select id from public.access_log',     'Anonym sieht kein Zugriffsprotokoll');
+-- Erwartet wird 42501 (insufficient_privilege), NICHT eine leere Ergebnismenge:
+-- der Rolle anon wurden in der Migration alle Tabellenrechte entzogen. Sie scheitert
+-- also schon am Tabellenzugriff und kommt nie bis zu den Zeilen-Zugriffsregeln.
+-- Das ist die stärkere Garantie.
+select throws_ok('select id from public.tenants',     '42501', null, 'Anonym kommt nicht an die Betriebe');
+select throws_ok('select id from public.memberships', '42501', null, 'Anonym kommt nicht an die Mitgliedschaften');
+select throws_ok('select id from public.access_log',  '42501', null, 'Anonym kommt nicht an das Zugriffsprotokoll');
 
 -- ===========================================================================
 -- 4. Rollengrenzen

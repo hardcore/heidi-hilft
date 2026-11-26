@@ -2,7 +2,7 @@
 
 ## Status: In Progress
 **Created:** 2026-11-25
-**Last Updated:** 2026-11-25 (Backend gebaut, Migrationen korrigiert)
+**Last Updated:** 2026-11-26 (Migrationen angewendet, 28 SQL-Tests grün)
 **Priorität:** P0 (MVP)
 
 ## Dependencies
@@ -175,7 +175,7 @@ Ein Nutzerkonto kann Mitgliedschaften in **mehreren** Mandanten haben, je mit ei
 - [ ] Braucht das Zugriffsprotokoll eine eigene Aufbewahrungsfrist, oder gilt die allgemeine aus PROJ-10?
 - [x] **Region des Supabase-Projekts** — bestätigt am 2026-11-25: Frankfurt (`eu-central-1`).
 - [ ] **AVV-Kette prüfen:** Supabase wurde über den Vercel-Marketplace bezogen. Damit steht Vercel als Vertragspartner für die Datenbank in der Kette, nicht nur für das Hosting. Für die Unterauftragnehmerliste und den AVV mit Kunden ist ein direkter Supabase-Vertrag sauberer.
-- [ ] **SQL-Tests noch nicht ausgeführt.** Es fehlt eine erreichbare Postgres-Instanz: Docker läuft auf dem Rechner nicht, und Claude Code hat keinen Zugriff auf die Verbindungsdaten (`.env*` ist gesperrt). Bis zur Ausführung ist die Mandantentrennung geschrieben, aber unbewiesen.
+- [x] **SQL-Tests ausgeführt** — 2026-11-26, 28 von 28 grün gegen das echte Projekt. Gelöst über `scripts/db-apply.sh`, das die Verbindung selbst aus `.env.local` liest.
 - [ ] **Auth-Einstellungen am Remote-Projekt setzen.** `supabase/config.toml` wirkt auf die lokale Instanz. Ob die neuere CLI sie per `supabase config push` auch remote anwendet, ist zu prüfen; andernfalls müssen Anmeldelink-Gültigkeit (60 Min), Sitzungsdauer (30 Tage gleitend), `enable_signup = false` und die Versandbremse im Supabase-Dashboard eingetragen werden.
 - [ ] `npm run lint` reparieren (ESLint-9-Flat-Config) — vorhandener Mangel im Starter-Kit.
 
@@ -274,10 +274,12 @@ Ein Nutzerkonto kann Mitgliedschaften in **mehreren** Mandanten haben, je mit ei
 
 - **32 Vitest-Tests, alle grün** (`npm test`): je Route der glückliche Pfad, 400 bei
   ungültiger Eingabe, 401 ohne Anmeldung, 403 bei falscher Rolle oder fremdem Betrieb.
-- **SQL-Tests** (`supabase/tests/proj1_rls.test.sql`): 24 pgTAP-Prüfungen für die
-  Mandantentrennung, Rollengrenzen, das anfügbare Protokoll, den letzten Kunden-Admin,
-  Support-Freigabe samt Ablauf und Widerruf, sowie gesperrte Betriebe.
-  **Noch nicht ausgeführt** — siehe offener Punkt unten.
+- **SQL-Tests** (`supabase/tests/proj1_rls.test.sql`): **28 pgTAP-Prüfungen, alle grün**,
+  ausgeführt am 2026-11-26 gegen das echte Projekt in Frankfurt über den Session pooler.
+  Abgedeckt: Mandantentrennung, Rechte der Rolle `anon`, Rollengrenzen, das anfügbare
+  Protokoll, der letzte Kunden-Admin, Support-Freigabe samt Ablauf und Widerruf,
+  gesperrte Betriebe und die Pflichtprüfung auf Tabellen ohne RLS.
+  Ausführen mit `./scripts/db-apply.sh --with-tests`.
 - `npm run build` läuft fehlerfrei, alle sechs Routen kompilieren.
 
 ### Abweichungen vom Tech Design
@@ -317,6 +319,36 @@ korrigiert statt durch Folgemigrationen ergänzt.
    `service_role`.
 
 Dazu zwei weitere SQL-Prüfungen (jetzt 26), die den Ablauf-Fall abdecken.
+
+### Erster Lauf gegen die echte Datenbank (2026-11-26)
+
+Migrationen angewendet über `./scripts/db-apply.sh`, Tests über `--with-tests`.
+Der Lauf hat **drei Dinge aufgedeckt**, die statische Betrachtung nicht gefunden hatte:
+
+**1. Sicherheitslücke: `guard_profile_update` war wirkungslos.**
+Die Funktion war `security definer`. In einer SECURITY-DEFINER-Funktion liefert
+`current_user` den **Eigentümer** der Funktion (`postgres`), nicht die aufrufende Rolle.
+Die Abkürzung „serverseitige Rollen dürfen alles" traf damit **immer** zu. Folge: jeder
+angemeldete Nutzer hätte sein eigenes `is_platform_admin` auf `true` setzen und sich zum
+AWSMD-Admin befördern können — und `last_tenant_id` auf einen fremden Betrieb stellen.
+
+Besonders unangenehm: diese Zeile war meine eigene „Korrektur" vom Vortag. Sie sollte die
+Rollenerkennung robuster machen und hat die Sicherung dabei abgeschaltet. Behoben in
+`20261126090000_proj1_fix_profile_guard.sql` durch `security invoker`; dort ist
+`current_user` die aufrufende Rolle. Belegt durch die Prüfungen 14 und 15.
+
+**2. Testfehler: die Rolle `anon` wird schon am Tabellenzugriff abgewiesen.**
+Die Prüfungen erwarteten eine leere Ergebnismenge. Tatsächlich antwortet die Datenbank mit
+`42501 permission denied`, weil der Rolle in der Migration alle Tabellenrechte entzogen
+wurden — `anon` kommt gar nicht bis zu den Zeilen-Zugriffsregeln. Das ist die stärkere
+Garantie; korrigiert wurden die Erwartungen, nicht das Schema.
+
+**3. Falsche Planzahl.** `plan(26)` bei 28 tatsächlichen Prüfungen. pgTAP meldet das als
+Abweichung; korrigiert auf 28.
+
+**Lehre für die weiteren Features:** Die Zugriffsregeln für PROJ-4 bis PROJ-12 gelten erst
+als fertig, wenn ihre SQL-Prüfungen gegen eine echte Datenbank gelaufen sind. Zwei der drei
+Befunde — darunter eine Rechteausweitung — waren beim Lesen des Codes nicht zu sehen.
 
 ### Vorhandener Mangel im Starter-Kit (nicht von PROJ-1 verursacht)
 
