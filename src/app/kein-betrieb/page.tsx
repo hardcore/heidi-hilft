@@ -27,7 +27,7 @@ export default async function KeinBetriebSeite() {
                 <span className="font-medium text-foreground">{session.email}</span> angemeldet
               </>
             ) : null}
-            . Dein Zugang gehört aber noch zu keiner Fahrschule.
+            . Dein Zugang gehört aber noch zu keinem Betrieb.
           </p>
           <p>
             Bitte dein Büro, dich einzuladen. Wer dich einlädt, braucht dafür nur

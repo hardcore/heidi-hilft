@@ -38,9 +38,9 @@ Ein Nutzerkonto kann Mitgliedschaften in **mehreren** Mandanten haben, je mit ei
   anmelden, damit ich mir kein weiteres Passwort merken muss.
 - Als **Kunden-Admin** möchte ich AWSMD befristeten Einblick in meine Gespräche gewähren
   können, damit ein Supportfall gelöst werden kann, ohne dauerhaft Daten zu öffnen.
-- Als **Kunden-Mitarbeiter**, der in zwei Fahrschulen arbeitet, möchte ich mit einer
+- Als **Kunden-Mitarbeiter**, der für zwei Betriebe arbeitet, möchte ich mit einer
   E-Mail-Adresse auf beide zugreifen und oben umschalten können.
-- Als **Kunden-Admin** möchte ich sicher sein, dass ein Mitarbeiter einer anderen Fahrschule
+- Als **Kunden-Admin** möchte ich sicher sein, dass ein Mitarbeiter eines anderen Betriebs
   meine Daten unter keinen Umständen sehen kann — auch nicht über einen manipulierten Link.
 
 ## Out of Scope
@@ -170,7 +170,8 @@ Ein Nutzerkonto kann Mitgliedschaften in **mehreren** Mandanten haben, je mit ei
 
 - [x] Gültigkeitsdauer des Anmeldelinks — **entschieden am 2026-11-25: 60 Minuten**, dafür nur einmal verwendbar und mit Versandbremse.
 - [x] Sitzungsdauer — **entschieden am 2026-11-25: 30 Tage, gleitend verlängert.**
-- [ ] **Eigener SMTP-Dienst (EU) — jetzt dringend, nicht erst PROJ-8.** Der eingebaute Versand erlaubt 2 Mails pro Stunde fürs ganze Projekt. Zwei Einladungen plus ein Anmeldeversuch reichen, um das Onboarding zu blockieren.
+- [x] **Maildienst — entschieden am 2026-11-26: Resend.** Als Custom SMTP in Supabase (`smtp.resend.com`, Benutzer `resend`, Passwort = API-Key, Port 465 oder 587), Domain `heidi-hilft.de` zu verifizieren. Bewusste Abwägung: Resends Region „Ireland" betrifft nur den Versandort, Kontodaten und Logs liegen laut Doku in den USA, alle 23 Unterauftragnehmer sind US-Firmen, Metadaten 30 Tage. Betroffen sind ausschließlich dienstliche Adressen von Mitarbeitenden, keine Endkundendaten, und Benachrichtigungen enthalten keine Nachrichteninhalte. Resend gehört in die Unterauftragnehmerliste und in den AVV (PROJ-10). Der PRD-Satz zur EU-Datenhaltung wurde entsprechend präzisiert.
+- [ ] SMTP-Zugang in Supabase eintragen und Domain bei Resend verifizieren — danach gilt die Versandbremse wie spezifiziert.
 - [ ] **Sitzungen laufen derzeit nie ab.** Entweder Pro-Plan oder eine eigene Inaktivitätsprüfung in der Middleware. Vor dem ersten echten Kunden zu entscheiden.
 - [ ] Darf ein `tenant_admin` einen Mitarbeiter wieder entfernen, dessen Chats noch offen sind — oder muss er die Gespräche vorher übergeben? (Berührt PROJ-7.)
 - [ ] Braucht das Zugriffsprotokoll eine eigene Aufbewahrungsfrist, oder gilt die allgemeine aus PROJ-10?
@@ -186,13 +187,13 @@ Ein Nutzerkonto kann Mitgliedschaften in **mehreren** Mandanten haben, je mit ei
 
 | Decision | Rationale | Date |
 |----------|-----------|------|
-| Nutzer ↔ Mandant als n:m-Mitgliedschaft, nicht `tenant_id` am Nutzer | Filialen und Verbünde sind bei Fahrschulen verbreitet, und Mitarbeiter arbeiten für mehrere Betriebe. Eine Tabelle mehr jetzt gegen eine schmerzhafte Migration später | 2026-11-25 |
+| Nutzer ↔ Mandant als n:m-Mitgliedschaft, nicht `tenant_id` am Nutzer | Filialen und Verbünde sind bei lokalen Betrieben verbreitet, und Mitarbeitende arbeiten oft für mehrere davon. Eine Tabelle mehr jetzt gegen eine schmerzhafte Migration später | 2026-11-25 |
 | `platform_admin` ist eine Konto-Eigenschaft, keine Mitgliedschaft | AWSMD steht über allen Mandanten; als Mitgliedschaft müsste bei jedem neuen Kunden ein Eintrag mitgepflegt werden | 2026-11-25 |
 | Plattform-Admin sieht standardmäßig keine Gesprächsinhalte | AWSMD ist Auftragsverarbeiter, nicht Eigentümer der Daten. Technisch erzwungene Zurückhaltung ist im AVV sauber und im Verkaufsgespräch ein Argument statt einer Erklärungsnot | 2026-11-25 |
 | Support-Einblick befristet auf 24 h, durch den Kunden freigegeben, protokolliert, nicht löschbar | Supportfälle brauchen den konkreten Fall; anonymisierte Verläufe sind dafür nutzlos. Die Befristung macht die Ausnahme zur Ausnahme | 2026-11-25 |
 | Magic Link statt Passwort | Kein Zurücksetzen, keine schwachen Passwörter, keine 2FA-Entscheidung im MVP — und die Einladung neuer Mitarbeiter ist derselbe Mechanismus | 2026-11-25 |
 | Unbekannte E-Mail erhält dieselbe Bestätigung wie eine bekannte | Sonst verrät die Anmeldeseite, welche Adressen Kunden sind | 2026-11-25 |
-| Nur drei Rollen, keine feingranularen Rechte | Eine Fahrschule hat zwei bis acht Mitarbeiter. Feine Rechte sind Verwaltungsaufwand ohne Nutzen auf dieser Größe | 2026-11-25 |
+| Nur drei Rollen, keine feingranularen Rechte | Ein lokaler Betrieb hat typischerweise zwei bis acht Mitarbeitende. Feine Rechte sind Verwaltungsaufwand ohne Nutzen auf dieser Größe | 2026-11-25 |
 | Fachtabellen entstehen mit ihrem Feature, nicht hier | Schema-Entscheidungen zu Gesprächen und Wissen brauchen die Anforderungen aus PROJ-4 bis PROJ-7. Vorwegnehmen führt zu mehr Umbau, nicht weniger | 2026-11-25 |
 | Mandantentrennung in der Datenbank, nicht in der Anwendung | Ein vergessener Filter in einer Abfrage wäre ein Datenschutzvorfall über Kundengrenzen. Die Datenbank verzeiht Vergessen, die Anwendung nicht | 2026-11-25 |
 | Gesperrter Mandant nimmt Nachrichten an, antwortet aber nicht | Nachrichten zu verwerfen wäre Datenverlust beim Kunden; zu antworten wäre Leistung ohne Vertrag | 2026-11-25 |
@@ -550,7 +551,7 @@ Es wird keine eigene Variante einer vorhandenen Komponente gebaut.
 
 ### Datenmodell in Klartext
 
-**Betrieb** — ein Kunde von AWSMD, zum Beispiel „Fahrschule Muster"
+**Betrieb** — ein Kunde von AWSMD, branchenunabhängig: Fahrschule, Salon, Praxis, Werkstatt
 - eigene Kennung
 - Name, Kurzname für das Kürzel in der Seitenleiste
 - Zustand: aktiv oder gesperrt

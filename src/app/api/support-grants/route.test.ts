@@ -67,7 +67,7 @@ describe('POST /api/support-grants', () => {
           first_login_at: null,
           tenant: {
             id: ALPHA,
-            name: 'Fahrschule Alpha',
+            name: 'Betrieb Alpha',
             short_name: 'FA',
             status: 'active',
             created_at: '2026-11-01T00:00:00Z',

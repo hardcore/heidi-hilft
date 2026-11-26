@@ -66,7 +66,7 @@ export default async function BetriebeSeite() {
 
         {!betriebe || betriebe.length === 0 ? (
           <p className="px-6 py-10 text-center text-muted-foreground">
-            Noch kein Betrieb angelegt. Fang mit der Pilot-Fahrschule an.
+            Noch kein Betrieb angelegt. Fang mit dem Pilotbetrieb an.
           </p>
         ) : (
           <Table>

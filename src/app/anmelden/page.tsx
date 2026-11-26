@@ -29,7 +29,7 @@ export default async function AnmeldenSeite({
         <div className="space-y-1">
           <h1 className="text-2xl font-medium tracking-tight">Bei Heidi anmelden</h1>
           <p className="text-muted-foreground">
-            Für Fahrschulen und ihr Team.
+            Für Betriebe und ihr Team.
           </p>
         </div>
 

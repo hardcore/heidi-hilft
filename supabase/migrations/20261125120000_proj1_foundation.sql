@@ -27,8 +27,8 @@ create table public.tenants (
   updated_at    timestamptz not null default now()
 );
 
-comment on table public.tenants is 'Ein Kunde von AWSMD, z. B. eine Fahrschule. Mandanten-Wurzel.';
-comment on column public.tenants.short_name is 'Kürzel für die Seitenleiste, z. B. FM für Fahrschule Muster.';
+comment on table public.tenants is 'Ein Kunde von AWSMD - ein Betrieb beliebiger Branche. Mandanten-Wurzel.';
+comment on column public.tenants.short_name is 'Kürzel für die Seitenleiste, z. B. MG für Muster GmbH.';
 
 create index tenants_status_idx on public.tenants (status);
 

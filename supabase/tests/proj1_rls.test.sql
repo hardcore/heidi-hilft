@@ -19,12 +19,12 @@ select plan(30);
 
 -- Zwei Betriebe
 insert into public.tenants (id, name, short_name) values
-  ('11111111-1111-1111-1111-111111111111', 'Fahrschule Alpha', 'FA'),
-  ('22222222-2222-2222-2222-222222222222', 'Fahrschule Beta',  'FB');
+  ('11111111-1111-1111-1111-111111111111', 'Betrieb Alpha', 'BA'),
+  ('22222222-2222-2222-2222-222222222222', 'Betrieb Beta',  'BB');
 
 -- Ein gesperrter Betrieb
 insert into public.tenants (id, name, short_name, status) values
-  ('33333333-3333-3333-3333-333333333333', 'Fahrschule Gamma', 'FG', 'suspended');
+  ('33333333-3333-3333-3333-333333333333', 'Betrieb Gamma', 'BG', 'suspended');
 
 -- Vier Nutzer. auth.users-Einträge lösen den Trigger aus, der die Profile anlegt.
 insert into auth.users (id, email, instance_id) values
@@ -223,10 +223,17 @@ select throws_like(
 
 select pg_temp.act_as('cccccccc-0000-0000-0000-000000000001');
 
+-- Bewusst nur die drei Testbetriebe zaehlen, nicht alle in der Datenbank:
+-- die Pruefung laeuft auch gegen das echte Projekt, in dem schon Betriebe stehen.
+-- Die Variante 'count(*) = 3' war gruen, solange die Datenbank leer war, und fiel
+-- beim ersten echten Betrieb um.
 select results_eq(
-  'select count(*)::int from public.tenants',
+  $$select count(*)::int from public.tenants
+     where id in ('11111111-1111-1111-1111-111111111111',
+                  '22222222-2222-2222-2222-222222222222',
+                  '33333333-3333-3333-3333-333333333333')$$,
   array[3],
-  'Plattform-Admin sieht alle Betriebe'
+  'Plattform-Admin sieht alle drei Testbetriebe, auch die fremden'
 );
 
 select ok(

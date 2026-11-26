@@ -66,7 +66,7 @@ export function createSupabaseStub(results: Record<string, StubResult> = {}) {
 export function session(overrides: Partial<SessionContext> = {}): SessionContext {
   const tenant = {
     id: ALPHA,
-    name: 'Fahrschule Alpha',
+    name: 'Betrieb Alpha',
     short_name: 'FA',
     status: 'active' as const,
     created_at: '2026-11-01T00:00:00Z',

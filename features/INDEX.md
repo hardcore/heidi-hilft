@@ -35,8 +35,8 @@
 | PROJ-18 | Aufgaben pro Gespräch | Aufgaben am Gespräch oder Kontakt anlegen, zuweisen, abhaken; offene Aufgaben im Dashboard | P1 | PROJ-7 | Roadmap | – | 2026-11-25 |
 | PROJ-19 | Website-Chat als zweiter Kanal | Einbettbares Chat-Widget für die Kundenwebsite, gleiche Wissensbasis und dasselbe Postfach | P2 | PROJ-6, PROJ-7 | Roadmap | – | 2026-11-25 |
 | PROJ-20 | Instagram-DM als Kanal | Instagram-Direktnachrichten über die Meta-API im selben Postfach | P2 | PROJ-19 | Roadmap | – | 2026-11-25 |
-| PROJ-21 | Online-Anmeldung & Vertrag mit E-Signatur | Eigener Webservice für Fahrschulanmeldung und Ausbildungsvertrag inklusive elektronischer Signatur, aus dem Chat heraus gestartet | P2 | PROJ-13 | Roadmap | – | 2026-11-25 |
-| PROJ-22 | Branchen-Startpakete | Vorbefüllte Wissensbasen und Themen für Friseure, Physiotherapie und Handwerk, damit das Onboarding neuer Branchen schnell geht | P2 | PROJ-4, PROJ-11 | Roadmap | – | 2026-11-25 |
+| PROJ-21 | Online-Anmeldung & Vertrag mit E-Signatur | Eigener Webservice für Anmeldung und Vertragsabschluss inklusive elektronischer Signatur, aus dem Chat heraus gestartet | P2 | PROJ-13 | Roadmap | – | 2026-11-25 |
+| PROJ-22 | Branchen-Startpakete | Vorbefüllte Wissensbasen und Themen je Branche (Friseure, Physiotherapie, Handwerk, Werkstätten …), damit das Onboarding eines neuen Betriebs schnell geht | P2 | PROJ-4, PROJ-11 | Roadmap | – | 2026-11-25 |
 
 ## Empfohlene Baureihenfolge
 

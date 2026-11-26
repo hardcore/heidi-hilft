@@ -33,7 +33,7 @@ function request(body: unknown) {
 }
 
 const validBody = {
-  name: 'Fahrschule Gamma',
+  name: 'Betrieb Gamma',
   shortName: 'fg',
   adminEmail: 'Buero@Gamma.test',
 };
@@ -68,7 +68,7 @@ describe('POST /api/admin/tenants', () => {
     stubs.client = createSupabaseStub();
     stubs.admin = createSupabaseStub({
       tenants: {
-        data: { id: 'new-tenant', name: 'Fahrschule Gamma', short_name: 'FG', status: 'active' },
+        data: { id: 'new-tenant', name: 'Betrieb Gamma', short_name: 'BG', status: 'active' },
         error: null,
       },
       profiles: { data: null, error: null },
@@ -112,7 +112,7 @@ describe('POST /api/admin/tenants', () => {
   it('nutzt ein bestehendes Profil statt ein zweites Konto anzulegen', async () => {
     stubs.admin = createSupabaseStub({
       tenants: {
-        data: { id: 'new-tenant', name: 'Fahrschule Gamma', short_name: 'FG', status: 'active' },
+        data: { id: 'new-tenant', name: 'Betrieb Gamma', short_name: 'BG', status: 'active' },
         error: null,
       },
       profiles: { data: { id: 'bestehendes-profil' }, error: null },

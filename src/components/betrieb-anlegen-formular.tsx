@@ -50,7 +50,7 @@ export function BetriebAnlegenFormular() {
           <Input
             id="name"
             className="h-11"
-            placeholder="Fahrschule Muster"
+            placeholder="Muster GmbH"
             aria-invalid={!!fehler.name}
             {...form.register('name')}
           />
@@ -85,7 +85,7 @@ export function BetriebAnlegenFormular() {
           id="adminEmail"
           type="email"
           className="h-11"
-          placeholder="buero@fahrschule-muster.de"
+          placeholder="buero@muster-gmbh.de"
           aria-invalid={!!fehler.adminEmail}
           aria-describedby="adminEmail-hinweis"
           {...form.register('adminEmail')}

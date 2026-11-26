@@ -22,14 +22,14 @@ describe('POST /api/auth/magic-link', () => {
   });
 
   it('verschickt einen Link für eine gültige Adresse', async () => {
-    const response = await POST(request({ email: 'Buero@Fahrschule.test' }));
+    const response = await POST(request({ email: 'Buero@Betrieb.test' }));
     const body = await response.json();
 
     expect(response.status).toBe(200);
     expect(body.ok).toBe(true);
     expect(stubs.client!.auth.signInWithOtp).toHaveBeenCalledWith(
       expect.objectContaining({
-        email: 'buero@fahrschule.test',
+        email: 'buero@betrieb.test',
         options: expect.objectContaining({ shouldCreateUser: false }),
       }),
     );
@@ -63,7 +63,7 @@ describe('POST /api/auth/magic-link', () => {
   });
 
   it('reicht ein projektinternes Ziel an die Ruecklaufadresse weiter', async () => {
-    await POST(request({ email: 'buero@fahrschule.test', weiter: '/einstellungen/zugriff' }));
+    await POST(request({ email: 'buero@betrieb.test', weiter: '/einstellungen/zugriff' }));
 
     const argumente = stubs.client!.auth.signInWithOtp.mock.calls[0][0];
     expect(argumente.options.emailRedirectTo).toContain('/auth/callback');
@@ -74,7 +74,7 @@ describe('POST /api/auth/magic-link', () => {
 
   it('weist eine fremde Adresse als Ziel ab (offene Weiterleitung)', async () => {
     const response = await POST(
-      request({ email: 'buero@fahrschule.test', weiter: 'https://angreifer.test/' }),
+      request({ email: 'buero@betrieb.test', weiter: 'https://angreifer.test/' }),
     );
 
     expect(response.status).toBe(400);
@@ -83,7 +83,7 @@ describe('POST /api/auth/magic-link', () => {
 
   it('weist ein protokollrelatives Ziel ab (//angreifer.test)', async () => {
     const response = await POST(
-      request({ email: 'buero@fahrschule.test', weiter: '//angreifer.test/' }),
+      request({ email: 'buero@betrieb.test', weiter: '//angreifer.test/' }),
     );
 
     expect(response.status).toBe(400);
@@ -95,7 +95,7 @@ describe('POST /api/auth/magic-link', () => {
       __otp: { data: null, error: { code: 'over_email_send_rate_limit', status: 429 } },
     });
 
-    const response = await POST(request({ email: 'buero@fahrschule.test' }));
+    const response = await POST(request({ email: 'buero@betrieb.test' }));
     expect(response.status).toBe(429);
   });
 });

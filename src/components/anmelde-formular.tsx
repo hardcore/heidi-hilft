@@ -110,7 +110,7 @@ export function AnmeldeFormular({ weiter }: { weiter?: string }) {
           inputMode="email"
           autoComplete="email"
           autoFocus
-          placeholder="buero@fahrschule.de"
+          placeholder="buero@betrieb.de"
           aria-invalid={!!form.formState.errors.email}
           aria-describedby={form.formState.errors.email ? 'email-fehler' : undefined}
           className="h-11"
