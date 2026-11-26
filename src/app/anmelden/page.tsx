@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { AnmeldeFormular } from '@/components/anmelde-formular';
+import { HinweisKarte } from '@/components/hinweis-karte';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const metadata: Metadata = { title: 'Anmelden · Heidi' };
@@ -26,23 +27,16 @@ export default async function AnmeldenSeite({
   const hinweis = fehler ? FEHLERTEXTE[fehler] ?? FEHLERTEXTE.ungueltig : null;
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-muted/40 p-4">
-      <div className="w-full max-w-md space-y-6 rounded-xl border bg-card p-6 shadow-sm sm:p-8">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-medium tracking-tight">Bei Heidi anmelden</h1>
-          <p className="text-muted-foreground">
-            Für Betriebe und ihr Team.
-          </p>
-        </div>
+    <HinweisKarte titel="Bei Heidi anmelden">
+      <p className="-mt-2 text-[16px] text-h-text-muted">Für Betriebe und ihr Team.</p>
 
-        {hinweis && (
-          <Alert variant={fehler === 'abgemeldet' ? 'default' : 'destructive'}>
-            <AlertDescription>{hinweis}</AlertDescription>
-          </Alert>
-        )}
+      {hinweis && (
+        <Alert variant={fehler === 'abgemeldet' ? 'default' : 'destructive'}>
+          <AlertDescription>{hinweis}</AlertDescription>
+        </Alert>
+      )}
 
-        <AnmeldeFormular weiter={weiter} />
-      </div>
-    </main>
+      <AnmeldeFormular weiter={weiter} />
+    </HinweisKarte>
   );
 }

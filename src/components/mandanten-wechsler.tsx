@@ -20,47 +20,43 @@ export interface WechslerEintrag {
   role: MembershipRole;
 }
 
-const ROLLE: Record<MembershipRole, string> = {
+export const ROLLE: Record<MembershipRole, string> = {
   tenant_admin: 'Admin',
   tenant_member: 'Mitarbeiter',
 };
 
 /**
- * Umschalter für den aktiven Betrieb.
+ * Wechsel des aktiven Betriebs.
  *
- * Erscheint nur bei mehr als einem Betrieb. Der Wechsel geht über den Server:
- * der aktive Betrieb steht im Profil, nicht im Browser – ein Browserwert ließe
- * sich auf eine fremde Betriebskennung ändern.
- *
- * Das Aussehen bekommt dieser Baustein mit PROJ-2.
+ * Der Wechsel geht über den Server: der aktive Betrieb steht im Profil, nicht im
+ * Browser – ein Browserwert ließe sich auf eine fremde Betriebskennung ändern.
+ * Scheitert er, springt die Anzeige auf den bisherigen Betrieb zurück.
  */
-export function MandantenWechsler({
-  tenants,
-  aktiv,
-}: {
-  tenants: WechslerEintrag[];
-  aktiv: string | null;
-}) {
+export function useBetriebWechsel(aktiv: string | null) {
   const router = useRouter();
   const [laeuft, starten] = useTransition();
   const [wert, setWert] = useState(aktiv ?? undefined);
 
-  if (tenants.length <= 1) return null;
-
   async function wechseln(tenantId: string) {
+    if (tenantId === wert) return;
     const vorher = wert;
     setWert(tenantId);
 
-    const antwort = await fetch('/api/tenants/switch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tenantId }),
-    });
+    let antwort: Response | null = null;
+    try {
+      antwort = await fetch('/api/tenants/switch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenantId }),
+      });
+    } catch {
+      antwort = null;
+    }
 
-    if (!antwort.ok) {
+    if (!antwort?.ok) {
       setWert(vorher);
       toast.error(
-        antwort.status === 403
+        antwort?.status === 403
           ? 'Auf diesen Betrieb hast du keinen Zugriff.'
           : 'Der Wechsel hat nicht geklappt. Bitte versuche es erneut.',
       );
@@ -73,9 +69,24 @@ export function MandantenWechsler({
     });
   }
 
+  return { wert, wechseln, laeuft };
+}
+
+/** Auswahlfeld für Hinweisseiten ohne Sidebar (z. B. „Betrieb gesperrt"). */
+export function MandantenWechsler({
+  tenants,
+  aktiv,
+}: {
+  tenants: WechslerEintrag[];
+  aktiv: string | null;
+}) {
+  const { wert, wechseln, laeuft } = useBetriebWechsel(aktiv);
+
+  if (tenants.length <= 1) return null;
+
   return (
     <Select value={wert} onValueChange={wechseln} disabled={laeuft}>
-      <SelectTrigger className="h-11 w-full sm:w-72" aria-label="Betrieb wechseln">
+      <SelectTrigger className="h-11 w-full" aria-label="Betrieb wechseln">
         <SelectValue placeholder="Betrieb wählen" />
       </SelectTrigger>
       <SelectContent>
@@ -83,7 +94,7 @@ export function MandantenWechsler({
           <SelectItem key={t.id} value={t.id}>
             <span className="flex items-center gap-2">
               <span>{t.name}</span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-h-text-muted">
                 {ROLLE[t.role]}
                 {t.status === 'suspended' ? ' · gesperrt' : ''}
               </span>

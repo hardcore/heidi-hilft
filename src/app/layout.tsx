@@ -1,26 +1,50 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import type { Metadata, Viewport } from 'next';
+import { Geist_Mono, Inter } from 'next/font/google';
+import { ThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
 
-// Inter laut docs/design-system.md. Die vollständige Typo- und Farbpalette
-// folgt mit PROJ-2; hier nur die Schrift, damit nichts später umgestellt
-// werden muss, was ohnehin feststeht.
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-inter',
+});
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-geist-mono',
+});
 
 export const metadata: Metadata = {
-  title: 'Heidi',
+  title: { default: 'Heidi', template: '%s · Heidi' },
   description: 'KI-Assistentin für WhatsApp – beantwortet Kundenanfragen rund um die Uhr.',
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: 'white' },
+    { media: '(prefers-color-scheme: dark)', color: 'black' },
+  ],
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="de">
-      <body className={`${inter.variable} font-sans antialiased`}>
-        {children}
-        <Toaster />
+    // next-themes setzt die Klasse vor dem ersten Zeichnen; die Abweichung
+    // zwischen Server- und Client-HTML am <html> ist deshalb gewollt.
+    <html lang="de" suppressHydrationWarning>
+      <body className={`${inter.variable} ${geistMono.variable} font-sans antialiased`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

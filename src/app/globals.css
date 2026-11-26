@@ -2,76 +2,162 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Heidi-Token aus docs/design-system.md.
+ *
+ * Eigenes Präfix --h-*, weil shadcn dieselben Namen anders belegt (--accent ist
+ * dort die Hover-Fläche, --input der Eingaberahmen). Die shadcn-Variablen werden
+ * unten aus den Heidi-Token abgeleitet.
+ *
+ * Werte als RGB-Tripel, damit Tailwind Deckkraft-Stufen bilden kann
+ * (bg-h-accent/10). Hex-Werte stehen nur hier und im Design-System-Dokument.
+ */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 0.5rem;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Hell – abgeleitet */
+    --h-canvas: 230 230 234;
+    --h-shell: 255 255 255;
+    --h-surface: 255 255 255;
+    --h-surface-2: 250 250 251;
+    --h-surface-3: 241 241 244;
+    --h-surface-active: 240 236 254;
+    --h-surface-hover: 244 244 246;
+    --h-input: 255 255 255;
+    --h-control: 255 255 255;
+    --h-border: 230 230 234;
+    --h-border-muted: 236 236 239;
+    --h-border-strong: 214 214 220;
+    --h-text: 23 23 26;
+    --h-text-strong: 11 11 13;
+    --h-text-soft: 68 68 76;
+    --h-text-muted: 110 110 120;
+    --h-accent: 115 86 241;
+    --h-accent-soft: 95 67 221;
+    --h-accent-text: 91 63 214;
+    --h-accent-off: 234 234 238;
+    --h-on-accent: 255 255 255;
+    --h-success: 22 163 74;
+    --h-success-text: 21 128 61;
+    --h-warning: 245 184 61;
+    --h-warning-text: 180 83 9;
+    --h-danger: 217 45 32;
+    --h-chat-bg: 244 244 246;
+    --h-chat-in: 255 255 255;
+    --h-chat-out: 238 233 254;
+    --h-chat-out-text: 23 23 26;
+    --h-shadow-shell: 0 20px 50px rgb(17 17 26 / 0.08);
+    color-scheme: light;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* Dunkel – verbindlich aus dem Prototyp */
+    --h-canvas: 61 61 63;
+    --h-shell: 11 11 13;
+    --h-surface: 20 20 22;
+    --h-surface-2: 23 23 26;
+    --h-surface-3: 32 32 37;
+    --h-surface-active: 30 30 35;
+    --h-surface-hover: 28 28 32;
+    --h-input: 15 15 17;
+    --h-control: 17 17 19;
+    --h-border: 34 34 39;
+    --h-border-muted: 38 38 43;
+    --h-border-strong: 42 42 48;
+    --h-text: 237 237 239;
+    --h-text-strong: 255 255 255;
+    --h-text-soft: 201 201 208;
+    --h-text-muted: 154 154 163;
+    --h-accent: 115 86 241;
+    --h-accent-soft: 155 133 244;
+    --h-accent-text: 185 168 248;
+    --h-accent-off: 31 31 36;
+    --h-on-accent: 255 255 255;
+    --h-success: 34 197 94;
+    --h-success-text: 74 222 128;
+    --h-warning: 245 184 61;
+    --h-warning-text: 245 184 61;
+    --h-danger: 240 68 56;
+    --h-chat-bg: 15 15 17;
+    --h-chat-in: 32 32 37;
+    --h-chat-out: 42 34 80;
+    --h-chat-out-text: 237 237 239;
+    --h-shadow-shell: 0 30px 60px rgb(0 0 0 / 0.35);
+    color-scheme: dark;
+  }
+
+  /*
+   * Ohne JavaScript setzt next-themes keine Klasse. Dann soll die Seite trotzdem
+   * dem System folgen – deshalb hier dieselben Dunkel-Werte noch einmal.
+   */
+  @media (prefers-color-scheme: dark) {
+    :root:not(.light):not(.dark) {
+      --h-canvas: 61 61 63;
+      --h-shell: 11 11 13;
+      --h-surface: 20 20 22;
+      --h-surface-2: 23 23 26;
+      --h-surface-3: 32 32 37;
+      --h-surface-active: 30 30 35;
+      --h-surface-hover: 28 28 32;
+      --h-input: 15 15 17;
+      --h-control: 17 17 19;
+      --h-border: 34 34 39;
+      --h-border-muted: 38 38 43;
+      --h-border-strong: 42 42 48;
+      --h-text: 237 237 239;
+      --h-text-strong: 255 255 255;
+      --h-text-soft: 201 201 208;
+      --h-text-muted: 154 154 163;
+      --h-accent-soft: 155 133 244;
+      --h-accent-text: 185 168 248;
+      --h-accent-off: 31 31 36;
+      --h-success: 34 197 94;
+      --h-success-text: 74 222 128;
+      --h-warning-text: 245 184 61;
+      --h-danger: 240 68 56;
+      --h-chat-bg: 15 15 17;
+      --h-chat-in: 32 32 37;
+      --h-chat-out: 42 34 80;
+      --h-chat-out-text: 237 237 239;
+      --h-shadow-shell: 0 30px 60px rgb(0 0 0 / 0.35);
+      color-scheme: dark;
+    }
+  }
+
+  /* shadcn-Variablen, abgeleitet aus den Heidi-Token */
+  :root {
+    --background: var(--h-surface);
+    --foreground: var(--h-text);
+    --card: var(--h-surface-2);
+    --card-foreground: var(--h-text);
+    --popover: var(--h-surface-2);
+    --popover-foreground: var(--h-text);
+    --primary: var(--h-accent);
+    --primary-foreground: var(--h-on-accent);
+    --secondary: var(--h-surface-3);
+    --secondary-foreground: var(--h-text);
+    --muted: var(--h-surface-3);
+    --muted-foreground: var(--h-text-muted);
+    --accent: var(--h-surface-hover);
+    --accent-foreground: var(--h-text-strong);
+    --destructive: var(--h-danger);
+    --destructive-foreground: var(--h-on-accent);
+    --border: var(--h-border-muted);
+    --input: var(--h-border-strong);
+    --ring: var(--h-accent);
+    --radius: 0.75rem;
+    --chart-1: var(--h-accent);
+    --chart-2: var(--h-accent-soft);
+    --chart-3: var(--h-success);
+    --chart-4: var(--h-warning);
+    --chart-5: var(--h-danger);
+    --sidebar-background: var(--h-shell);
+    --sidebar-foreground: var(--h-text-soft);
+    --sidebar-primary: var(--h-accent);
+    --sidebar-primary-foreground: var(--h-on-accent);
+    --sidebar-accent: var(--h-surface-active);
+    --sidebar-accent-foreground: var(--h-text-strong);
+    --sidebar-border: var(--h-border);
+    --sidebar-ring: var(--h-accent);
   }
 }
 
@@ -79,7 +165,21 @@
   * {
     @apply border-border;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-h-canvas text-h-text;
+  }
+
+  /* Fokusring laut Design-System: 2 px Akzent, 2 px Abstand – nie entfernen. */
+  *:focus-visible {
+    outline: 2px solid rgb(var(--h-accent)) !important;
+    outline-offset: 2px !important;
+    box-shadow: none;
+  }
+}
+
+@layer components {
+  .mono-label {
+    @apply font-mono text-[13px] font-normal uppercase tracking-[0.14em] text-h-text-muted;
   }
 }
