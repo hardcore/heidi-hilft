@@ -31,7 +31,9 @@ refresh_token_reuse_interval = 10
 
 [auth.sessions]
 # Entscheidung 2026-11-25: 30 Tage, gleitend.
-# Nur inactivity_timeout, kein timebox -> die Sitzung verlängert sich bei jeder Nutzung.
+# ACHTUNG: Am echten Projekt NICHT wirksam - Supabase bietet die Sitzungssteuerung
+# erst ab Pro an. Auf dem kostenlosen Tarif steht sie auf 0 (nie). Siehe Abweichung
+# in features/PROJ-1-...md. Lokal gilt der Wert.
 inactivity_timeout = "720h"
 
 [auth.email]
@@ -46,8 +48,10 @@ otp_length = 8
 max_frequency = "60s"
 
 [auth.rate_limit]
-# Maximal 3 Anmeldelinks pro Stunde und Adresse (AC: Versandbremse).
-email_sent = 3
+# Der eingebaute Mailversand von Supabase ist fest auf 2 Mails pro Stunde begrenzt
+# und laesst sich nur mit eigenem SMTP aendern. Lokal hier derselbe Wert, damit die
+# Entwicklung nicht grosszuegiger ist als die Produktion.
+email_sent = 2
 
 [inbox]
 enabled = true

@@ -41,22 +41,25 @@ if [ -z "${DB_URL:-}" ]; then
   exit 1
 fi
 
-"$PSQL" "$DB_URL" -v ON_ERROR_STOP=1 --no-psqlrc -v email="$EMAIL" <<'SQL'
-\set ON_ERROR_STOP on
+# psql ersetzt :'email' weder in -c noch in einem Dollar-Quote-Block,
+# wohl aber in Eingaben ueber stdin. Deshalb dieser Weg.
+run() { "$PSQL" "$DB_URL" -v ON_ERROR_STOP=1 --no-psqlrc -v email="$EMAIL" "$@"; }
 
-do $$
-declare
-  ziel uuid;
-begin
-  select id into ziel from public.profiles where lower(email) = lower(:'email');
+gefunden="$(run -tA <<'SQL'
+select count(*) from public.profiles where lower(email) = lower(:'email');
+SQL
+)"
 
-  if ziel is null then
-    raise exception 'Kein Profil zu dieser Adresse. Lege den Nutzer zuerst im Supabase-Dashboard unter Authentication -> Users an.';
-  end if;
+if [ "$gefunden" = "0" ]; then
+  echo "Kein Profil zu dieser Adresse." >&2
+  echo "Lege den Nutzer zuerst im Supabase-Dashboard an: Authentication -> Users -> Add user." >&2
+  echo "Das Profil entsteht dabei automatisch ueber den Trigger on_auth_user_created." >&2
+  exit 1
+fi
 
-  update public.profiles set is_platform_admin = true where id = ziel;
-end;
-$$;
+run <<'SQL'
+update public.profiles set is_platform_admin = true
+ where lower(email) = lower(:'email');
 
 select email, is_platform_admin as plattform_admin
   from public.profiles

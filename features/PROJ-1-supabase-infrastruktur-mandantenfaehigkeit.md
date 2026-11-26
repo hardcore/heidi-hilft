@@ -2,7 +2,7 @@
 
 ## Status: In Progress
 **Created:** 2026-11-25
-**Last Updated:** 2026-11-26 (Frontend gebaut, 35 Vitest- und 30 SQL-Tests grün)
+**Last Updated:** 2026-11-26 (Frontend gebaut, Supabase eingerichtet, Tarifgrenzen dokumentiert)
 **Priorität:** P0 (MVP)
 
 ## Dependencies
@@ -170,7 +170,8 @@ Ein Nutzerkonto kann Mitgliedschaften in **mehreren** Mandanten haben, je mit ei
 
 - [x] Gültigkeitsdauer des Anmeldelinks — **entschieden am 2026-11-25: 60 Minuten**, dafür nur einmal verwendbar und mit Versandbremse.
 - [x] Sitzungsdauer — **entschieden am 2026-11-25: 30 Tage, gleitend verlängert.**
-- [ ] Über welchen Dienst gehen die Anmelde-E-Mails? Supabase-Standardversand reicht für den Pilot, braucht aber für Zustellraten und eigenen Absender später einen EU-Dienst (Entscheidung gehört zu PROJ-8, betrifft aber schon hier die Zustellung).
+- [ ] **Eigener SMTP-Dienst (EU) — jetzt dringend, nicht erst PROJ-8.** Der eingebaute Versand erlaubt 2 Mails pro Stunde fürs ganze Projekt. Zwei Einladungen plus ein Anmeldeversuch reichen, um das Onboarding zu blockieren.
+- [ ] **Sitzungen laufen derzeit nie ab.** Entweder Pro-Plan oder eine eigene Inaktivitätsprüfung in der Middleware. Vor dem ersten echten Kunden zu entscheiden.
 - [ ] Darf ein `tenant_admin` einen Mitarbeiter wieder entfernen, dessen Chats noch offen sind — oder muss er die Gespräche vorher übergeben? (Berührt PROJ-7.)
 - [ ] Braucht das Zugriffsprotokoll eine eigene Aufbewahrungsfrist, oder gilt die allgemeine aus PROJ-10?
 - [x] **Region des Supabase-Projekts** — bestätigt am 2026-11-25: Frankfurt (`eu-central-1`).
@@ -350,6 +351,41 @@ Abweichung; korrigiert auf 28.
 **Lehre für die weiteren Features:** Die Zugriffsregeln für PROJ-4 bis PROJ-12 gelten erst
 als fertig, wenn ihre SQL-Prüfungen gegen eine echte Datenbank gelaufen sind. Zwei der drei
 Befunde — darunter eine Rechteausweitung — waren beim Lesen des Codes nicht zu sehen.
+
+### Abweichungen durch den Supabase-Tarif (2026-11-26)
+
+Beim Einstellen am echten Projekt stellten sich zwei Entscheidungen als nicht umsetzbar
+heraus. Beide sind Tarifgrenzen, keine Denkfehler — aber beide haben Folgen.
+
+**1. Sitzungsdauer „30 Tage, gleitend" ist nicht wirksam.**
+Supabase bietet *Time-box user sessions* und *Inactivity timeout* erst ab dem Pro-Plan an.
+Auf dem kostenlosen Tarif stehen beide auf `0` — das heißt **nie**. Sitzungen laufen also
+gar nicht ab.
+
+Was trotzdem greift: Zugriffstoken mit einer Stunde Laufzeit, rotierende
+Erneuerungstoken und die Erkennung wiederverwendeter Token (alles aktiv).
+Was fehlt: ein verlorenes oder vergessenes Gerät bleibt unbegrenzt angemeldet, bis
+jemand die Sitzung widerruft.
+
+Für den Pilot vertretbar, vor dem ersten echten Kunden nicht: entweder Pro-Plan, oder
+eine eigene Prüfung in der Middleware, die nach 30 Tagen ohne Nutzung abmeldet.
+Letzteres ist überschaubar — der Zeitpunkt der letzten Nutzung müsste im Profil
+mitgeführt werden.
+
+**2. Der Mailversand ist auf 2 Mails pro Stunde begrenzt.**
+Der eingebaute Versand von Supabase hat ein festes Limit, das sich nur mit eigenem
+SMTP ändern lässt. Die Entscheidung „3 Anmeldelinks pro Stunde" ist damit hinfällig;
+es sind 2, und zwar **für das gesamte Projekt**, nicht pro Adresse.
+
+Folgen, die über das Testen hinausgehen: Einen Betrieb anlegen verschickt eine
+Einladung. Zwei Betriebe hintereinander plus ein eigener Anmeldeversuch sprengen das
+Limit bereits. Der eigene Versanddienst ist damit **keine Frage von PROJ-8 mehr,
+sondern Voraussetzung für brauchbares Onboarding**. Empfehlung: einen EU-Dienst
+(etwa Brevo oder Mailjet, beide mit AVV und EU-Rechenzentren) noch vor dem Pilot
+einrichten und als Custom SMTP hinterlegen.
+
+Das Akzeptanzkriterium zur Versandbremse („mehr als drei pro 60 Sekunden") gilt
+weiterhin inhaltlich, die Zahl stimmt aber erst mit eigenem SMTP.
 
 ### Vorhandener Mangel im Starter-Kit (nicht von PROJ-1 verursacht)
 
