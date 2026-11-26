@@ -119,7 +119,8 @@ Details und Reihenfolge: `features/INDEX.md`
   dennoch (Art. 3 Abs. 2). Daraus folgt: ein **Vertreter in der Union** nach Art. 27 ist zu
   benennen, und **jeder Zugriff aus Dubai ist eine Drittlandsübermittlung** — auch bei
   Speicherung in Frankfurt. Der AVV braucht Standardvertragsklauseln und eine
-  Risikoabschätzung. Vor dem ersten Kundenvertrag mit einer Kanzlei zu klären
+  Risikoabschätzung. Vor dem ersten Kundenvertrag mit einer Kanzlei zu klären —
+  offene Punkte stehen in `docs/rechtliche-aufgaben.md`
 - **Alle Kunden- und Endkundendaten liegen in der EU** (Supabase Frankfurt, EU-KI).
   Nachrichteninhalte, Kontaktdaten der Endkunden und die Wissensbasis verlassen die EU nie.
 - **Deshalb ist der eingeschränkte Einblick von AWSMD die zentrale Maßnahme:** Weil Zugriff

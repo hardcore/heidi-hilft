@@ -794,6 +794,7 @@ im Admin.
 > Das ist keine Rechtsberatung. Der Vertreter nach Art. 27 und die Wahl der richtigen
 > Vertragsklauseln gehören zu einem Datenschutzbeauftragten oder einer Kanzlei — aber sie
 > sind zu klären, **bevor** der erste Kunde unterschreibt, nicht danach.
+> Die offenen Punkte sind in `docs/rechtliche-aufgaben.md` festgehalten.
 
 ---
 
