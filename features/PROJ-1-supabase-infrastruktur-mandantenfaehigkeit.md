@@ -416,6 +416,10 @@ sondern Voraussetzung für brauchbares Onboarding**. Empfehlung: einen EU-Dienst
 (etwa Brevo oder Mailjet, beide mit AVV und EU-Rechenzentren) noch vor dem Pilot
 einrichten und als Custom SMTP hinterlegen.
 
+> **Überholt am 2026-11-26:** Die Empfehlung eines EU-Dienstes wurde verworfen,
+> entschieden ist **Resend** (siehe Open Questions und `docs/PRD.md`). Der Absatz bleibt
+> als Verlauf stehen.
+
 Das Akzeptanzkriterium zur Versandbremse („mehr als drei pro 60 Sekunden") gilt
 weiterhin inhaltlich, die Zahl stimmt aber erst mit eigenem SMTP.
 

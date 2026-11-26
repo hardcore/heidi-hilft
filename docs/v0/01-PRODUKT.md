@@ -49,7 +49,7 @@ Status laut `features/INDEX.md` vom 2026-11-26.
 | ID | Feature | Status | Hängt ab von |
 |----|---------|--------|--------------|
 | PROJ-1 | Supabase-Infrastruktur & Mandantenfähigkeit | **In Progress** (im Wesentlichen fertig) | — |
-| PROJ-2 | Design-System & App-Shell (hell + dunkel) | Roadmap | — |
+| PROJ-2 | Design-System & App-Shell (hell + dunkel) | **Planned** (Spec geschrieben) | — |
 | PROJ-3 | Betriebs- & Nutzerverwaltung | Roadmap | 1, 2 |
 | PROJ-4 | Wissensbasis & FAQ-Pflege | Roadmap | 1, 2 |
 | PROJ-5 | WhatsApp-Anbindung über 360dialog | Roadmap | 1 |
