@@ -13,7 +13,7 @@ Jeder Betrieb bekommt seine eigene, gebrandete Heidi, die **ausschließlich aus 
 eigenen Wissen** antwortet und bei Unsicherheit ans Team übergibt, statt zu raten.
 
 - **Preis:** 349 €/Monat pro Betrieb, Zielkosten unter 80 €/Monat
-- **Vertragspartner:** AWSMD, Deutschland
+- **Vertragspartner:** AWSMD — Awesome Model Development, Dubai (VAE). **Kein EU-Sitz**, siehe Datenschutz-Rahmen
 - **Markteinstieg:** Fahrschulen. Viele WhatsApp-Anfragen, immer dieselben Fragen, eine
   Zielgruppe zwischen 17 und 25, die nicht anruft
 - **Nicht die Grenze:** Friseure, Physiotherapie, Handwerk, Werkstätten, Praxen. Die
@@ -104,6 +104,11 @@ ein Plattform-Admin, ein Testbetrieb („Fahrschule Siegel").
 **Datenschutz**
 - Alle Kunden- und Endkundendaten liegen in der EU: Supabase Frankfurt, EU-KI (Mistral).
   Nachrichteninhalte, Kontaktdaten und Wissensbasis verlassen die EU nie
+- **AWSMD sitzt in Dubai (VAE), also außerhalb der EU.** Die DSGVO gilt trotzdem
+  (Art. 3 Abs. 2). Zwei Folgen: ein Vertreter in der Union nach Art. 27 ist zu benennen,
+  und jeder Zugriff aus Dubai ist eine Drittlandsübermittlung — auch bei Speicherung in
+  Frankfurt. Deshalb ist der standardmäßig eingeschränkte Einblick von AWSMD nicht Komfort,
+  sondern die zentrale technische Maßnahme: weniger Zugriff heißt weniger Übermittlung
 - **Eine bewusste Ausnahme:** Anmelde- und Hinweis-E-Mails laufen über Resend (USA) unter
   Standardvertragsklauseln. Betroffen sind nur dienstliche Adressen von Mitarbeitenden,
   keine Endkundendaten, und Benachrichtigungen enthalten keine Nachrichteninhalte

@@ -1,6 +1,7 @@
 # Product Requirements Document — Heidi
 
-> White-Label-KI-Assistent für WhatsApp · heidi-hilft.de · Anbieter: AWSMD (Deutschland)
+> White-Label-KI-Assistent für WhatsApp · heidi-hilft.de
+> Anbieter: AWSMD — Awesome Model Development, Dubai (VAE)
 
 ## Vision
 
@@ -112,9 +113,19 @@ Details und Reihenfolge: `features/INDEX.md`
   Betriebs oder in ein Startpaket, nie in Datenmodell, Oberfläche oder Antwortlogik
 
 **Recht & Datenschutz**
-- Vertragspartner gegenüber Kunden ist AWSMD, Deutschland
+- Vertragspartner gegenüber Kunden ist **AWSMD — Awesome Model Development, Dubai (VAE)**.
+  Der Betrieb ist Verantwortlicher, AWSMD Auftragsverarbeiter
+- **Sitz außerhalb der EU, kein Angemessenheitsbeschluss für die VAE.** Die DSGVO gilt
+  dennoch (Art. 3 Abs. 2). Daraus folgt: ein **Vertreter in der Union** nach Art. 27 ist zu
+  benennen, und **jeder Zugriff aus Dubai ist eine Drittlandsübermittlung** — auch bei
+  Speicherung in Frankfurt. Der AVV braucht Standardvertragsklauseln und eine
+  Risikoabschätzung. Vor dem ersten Kundenvertrag mit einer Kanzlei zu klären
 - **Alle Kunden- und Endkundendaten liegen in der EU** (Supabase Frankfurt, EU-KI).
   Nachrichteninhalte, Kontaktdaten der Endkunden und die Wissensbasis verlassen die EU nie.
+- **Deshalb ist der eingeschränkte Einblick von AWSMD die zentrale Maßnahme:** Weil Zugriff
+  aus Dubai eine Übermittlung ist, begrenzt jede Zugriffsbeschränkung die Übermittlung.
+  Standardmäßig keine Inhalte, Einblick nur nach befristeter Freigabe durch den Kunden,
+  jeder Zugriff protokolliert.
 - **Eine Ausnahme, bewusst in Kauf genommen:** Der Versand von Anmelde- und
   Hinweis-E-Mails läuft über Resend (USA) unter Standardvertragsklauseln und dem
   EU-US Data Privacy Framework. Betroffen sind ausschließlich die dienstlichen

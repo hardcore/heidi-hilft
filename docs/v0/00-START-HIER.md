@@ -2,7 +2,7 @@
 
 > **Das hier ist deine Arbeitsanweisung. Lies sie zuerst und halte dich daran.**
 > Du baust an Heidi weiter, einem White-Label-KI-Assistenten für WhatsApp.
-> Anbieter ist AWSMD (Deutschland), die Domain ist heidi-hilft.de.
+> Anbieter ist AWSMD (Awesome Model Development, Dubai/VAE), die Domain ist heidi-hilft.de.
 
 ## Dein erster Schritt
 

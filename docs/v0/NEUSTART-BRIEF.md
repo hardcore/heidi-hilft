@@ -16,7 +16,7 @@ beim Wettbewerber landet.
 Jeder Betrieb bekommt seine eigene, gebrandete Heidi. Sie antwortet **ausschließlich aus dem
 Wissen dieses einen Betriebs** und übergibt bei Unsicherheit ans Team, statt zu raten.
 
-- **Anbieter:** AWSMD, Deutschland. Domain: heidi-hilft.de
+- **Anbieter:** AWSMD — Awesome Model Development, Dubai (VAE). Domain: heidi-hilft.de
 - **Preis:** 349 €/Monat pro Betrieb, Zielkosten unter 80 €/Monat
 - **Oberfläche:** Deutsch. Endkunden werden geduzt
 - **Erster Markt:** Fahrschulen — viele WhatsApp-Anfragen, immer dieselben Fragen, eine
@@ -390,6 +390,290 @@ Datenbank.
 **`access_log`** — nur anfügbar
 `tenant_id`, `actor_id`, `actor_email`, `as_platform_admin`, `area`, `action`, `occurred_at`
 
+## 4.1 Das Fundament als SQL
+
+Dieses Schema ist in der Vorgängerversion gegen eine echte Datenbank gelaufen und von den
+Prüfungen aus 3.10 abgedeckt. Übernimm es, statt es neu zu erfinden — die Feinheiten in den
+Triggern sind teuer erkauft (Abschnitt 8).
+
+```sql
+create extension if not exists "pgcrypto";
+
+create type tenant_status     as enum ('active', 'suspended');
+create type membership_role   as enum ('tenant_admin', 'tenant_member');
+create type membership_status as enum ('invited', 'active');
+
+-- ---------------------------------------------------------------- Betriebe
+create table public.tenants (
+  id         uuid primary key default gen_random_uuid(),
+  name       text not null check (char_length(trim(name)) between 2 and 120),
+  short_name text not null check (char_length(trim(short_name)) between 1 and 4),
+  status     tenant_status not null default 'active',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index tenants_status_idx on public.tenants (status);
+
+-- ---------------------------------------------------------------- Profile
+create table public.profiles (
+  id                uuid primary key references auth.users (id) on delete cascade,
+  email             text not null,
+  full_name         text,
+  is_platform_admin boolean not null default false,
+  last_tenant_id    uuid references public.tenants (id) on delete set null,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz not null default now()
+);
+create unique index profiles_email_key on public.profiles (lower(email));
+create index profiles_platform_admin_idx
+  on public.profiles (is_platform_admin) where is_platform_admin;
+
+-- ------------------------------------------------------- Mitgliedschaften
+create table public.memberships (
+  id             uuid primary key default gen_random_uuid(),
+  tenant_id      uuid not null references public.tenants (id) on delete cascade,
+  profile_id     uuid not null references public.profiles (id) on delete cascade,
+  role           membership_role not null default 'tenant_member',
+  status         membership_status not null default 'invited',
+  invited_at     timestamptz not null default now(),
+  first_login_at timestamptz,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz not null default now(),
+  constraint memberships_unique_per_tenant unique (tenant_id, profile_id)
+);
+create index memberships_profile_idx     on public.memberships (profile_id);
+create index memberships_tenant_idx      on public.memberships (tenant_id);
+create index memberships_tenant_role_idx on public.memberships (tenant_id, role);
+
+-- ------------------------------------------------------- Support-Freigaben
+create table public.support_grants (
+  id         uuid primary key default gen_random_uuid(),
+  tenant_id  uuid not null references public.tenants (id) on delete cascade,
+  granted_by uuid not null references public.profiles (id) on delete restrict,
+  granted_at timestamptz not null default now(),
+  expires_at timestamptz not null,
+  revoked_at timestamptz,
+  constraint support_grants_window check (expires_at > granted_at)
+);
+create index support_grants_tenant_idx on public.support_grants (tenant_id);
+-- Hoechstens eine OFFENE Freigabe je Betrieb. Das Praedikat darf now() nicht
+-- enthalten (nicht immutable) - abgelaufene schliesst der Trigger unten.
+create unique index support_grants_one_open_per_tenant
+  on public.support_grants (tenant_id) where revoked_at is null;
+
+-- ---------------------------------------------- Zugriffsprotokoll (append-only)
+create table public.access_log (
+  id                bigint generated always as identity primary key,
+  tenant_id         uuid not null references public.tenants (id) on delete cascade,
+  actor_id          uuid references public.profiles (id) on delete set null,
+  actor_email       text not null,   -- bleibt aussagekraeftig, auch wenn das Profil geht
+  as_platform_admin boolean not null default false,
+  area              text not null check (char_length(area) between 1 and 80),
+  action            text not null
+                      check (action in ('view','export','grant','revoke','login')),
+  occurred_at       timestamptz not null default now()
+);
+create index access_log_tenant_time_idx
+  on public.access_log (tenant_id, occurred_at desc);
+```
+
+### Trigger
+
+```sql
+-- updated_at pflegen
+create or replace function public.touch_updated_at()
+returns trigger language plpgsql as $$
+begin new.updated_at := now(); return new; end; $$;
+
+create trigger tenants_touch     before update on public.tenants
+  for each row execute function public.touch_updated_at();
+create trigger profiles_touch    before update on public.profiles
+  for each row execute function public.touch_updated_at();
+create trigger memberships_touch before update on public.memberships
+  for each row execute function public.touch_updated_at();
+
+-- Profil entsteht automatisch zum Auth-Nutzer
+create or replace function public.handle_new_auth_user()
+returns trigger language plpgsql security definer
+set search_path = public, pg_temp as $$
+begin
+  insert into public.profiles (id, email, full_name)
+  values (new.id, new.email, nullif(new.raw_user_meta_data ->> 'full_name', ''))
+  on conflict (id) do nothing;
+  return new;
+end; $$;
+
+create trigger on_auth_user_created after insert on auth.users
+  for each row execute function public.handle_new_auth_user();
+
+-- Der letzte Kunden-Admin bleibt. Sonst sperrt sich ein Betrieb aus.
+create or replace function public.assert_tenant_keeps_admin()
+returns trigger language plpgsql security definer
+set search_path = public, pg_temp as $$
+declare remaining integer;
+begin
+  -- NEW wird fuer die Mandantenkennung absichtlich NICHT gelesen:
+  -- bei DELETE ist NEW nicht belegt und der Zugriff bricht ab.
+  select count(*) into remaining
+    from public.memberships m
+   where m.tenant_id = old.tenant_id
+     and m.role = 'tenant_admin'
+     and m.id <> old.id;
+
+  if tg_op = 'UPDATE' and new.role = 'tenant_admin' then
+    remaining := remaining + 1;
+  end if;
+
+  if remaining = 0 then
+    raise exception 'Der letzte Kunden-Admin eines Betriebs kann nicht entfernt oder herabgestuft werden'
+      using errcode = 'check_violation';
+  end if;
+
+  -- BEFORE DELETE muss OLD zurueckgeben. NULL verwirft das Loeschen stillschweigend.
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end; $$;
+
+create trigger memberships_keep_one_admin_on_update
+  before update of role on public.memberships for each row
+  when (old.role = 'tenant_admin' and new.role <> 'tenant_admin')
+  execute function public.assert_tenant_keeps_admin();
+
+create trigger memberships_keep_one_admin_on_delete
+  before delete on public.memberships for each row
+  when (old.role = 'tenant_admin')
+  execute function public.assert_tenant_keeps_admin();
+
+-- Das Freigabefenster setzt die Datenbank, nicht die Anwendung.
+create or replace function public.pin_support_grant_window()
+returns trigger language plpgsql security definer
+set search_path = public, pg_temp as $$
+begin
+  -- Abgelaufene, nicht widerrufene Freigaben schliessen, sonst blockiert der
+  -- Unique-Index jede weitere. Noch LAUFENDE bleiben stehen und loesen bewusst
+  -- einen Konflikt aus - die Route meldet dann 409.
+  update public.support_grants
+     set revoked_at = expires_at
+   where tenant_id = new.tenant_id
+     and revoked_at is null
+     and expires_at <= now();
+
+  new.granted_at := now();
+  new.expires_at := now() + interval '24 hours';
+  new.revoked_at := null;
+  return new;
+end; $$;
+
+create trigger support_grants_pin_window before insert on public.support_grants
+  for each row execute function public.pin_support_grant_window();
+
+-- Eine Freigabe laesst sich nur widerrufen, nicht verlaengern.
+create or replace function public.guard_support_grant_update()
+returns trigger language plpgsql as $$
+begin
+  if new.tenant_id  is distinct from old.tenant_id
+  or new.granted_by is distinct from old.granted_by
+  or new.granted_at is distinct from old.granted_at
+  or new.expires_at is distinct from old.expires_at then
+    raise exception 'Eine Freigabe kann nur widerrufen, nicht veraendert werden'
+      using errcode = 'insufficient_privilege';
+  end if;
+  return new;
+end; $$;
+
+create trigger support_grants_guard_update before update on public.support_grants
+  for each row execute function public.guard_support_grant_update();
+
+-- Eigene Einladung beim ersten Anmelden aktivieren. Wirkt NUR auf auth.uid().
+-- Bewusst nicht ueber den Dienstschluessel: der Anmeldeweg ist der letzte Ort,
+-- an dem man einen Generalschluessel haben will.
+create or replace function public.activate_my_memberships()
+returns integer language plpgsql security definer
+set search_path = public, pg_temp as $$
+declare betroffen integer;
+begin
+  if auth.uid() is null then
+    raise exception 'Nicht angemeldet' using errcode = 'insufficient_privilege';
+  end if;
+
+  update public.memberships
+     set status = 'active',
+         first_login_at = coalesce(first_login_at, now())
+   where profile_id = auth.uid()
+     and status = 'invited';
+
+  get diagnostics betroffen = row_count;
+  return betroffen;
+end; $$;
+
+revoke all on function public.activate_my_memberships() from public, anon;
+grant execute on function public.activate_my_memberships() to authenticated;
+```
+
+### Rechte und Regeln der Fundamenttabellen
+
+```sql
+revoke all on public.tenants, public.profiles, public.memberships,
+              public.support_grants, public.access_log from anon;
+
+grant select, insert, update          on public.tenants        to authenticated;
+grant select, update                  on public.profiles       to authenticated;
+grant select, insert, update, delete  on public.memberships    to authenticated;
+grant select, insert, update          on public.support_grants to authenticated;
+grant select, insert                  on public.access_log     to authenticated;
+revoke update, delete                 on public.access_log   from authenticated;
+
+alter table public.tenants        enable row level security;
+alter table public.profiles       enable row level security;
+alter table public.memberships    enable row level security;
+alter table public.support_grants enable row level security;
+alter table public.access_log     enable row level security;
+
+-- tenants: sichtbar fuer Mitglieder (auch bei gesperrtem Betrieb, damit die
+-- Hinweisseite erscheinen kann) und fuer AWSMD. Kein DELETE - Betriebe werden
+-- gesperrt, nicht geloescht.
+create policy tenants_select on public.tenants for select to authenticated
+  using (public.is_member_of_any_status(id) or public.is_platform_admin());
+create policy tenants_insert on public.tenants for insert to authenticated
+  with check (public.is_platform_admin());
+create policy tenants_update on public.tenants for update to authenticated
+  using       (public.is_platform_admin() or public.has_tenant_role(id, 'tenant_admin'))
+  with check  (public.is_platform_admin() or public.has_tenant_role(id, 'tenant_admin'));
+
+-- profiles: die eigene Zeile, Profile aus gemeinsamen Betrieben (fuer Teamlisten),
+-- und AWSMD. Kein INSERT - Profile entstehen nur ueber den Trigger.
+create policy profiles_select on public.profiles for select to authenticated
+  using (id = auth.uid() or public.shares_tenant_with(id) or public.is_platform_admin());
+create policy profiles_update_self on public.profiles for update to authenticated
+  using (id = auth.uid()) with check (id = auth.uid());
+-- Welche SPALTEN damit aenderbar werden, begrenzt guard_profile_update (3.8).
+
+-- memberships
+create policy memberships_select on public.memberships for select to authenticated
+  using (profile_id = auth.uid()
+         or public.is_member_of_any_status(tenant_id)
+         or public.is_platform_admin());
+create policy memberships_insert on public.memberships for insert to authenticated
+  with check (public.has_tenant_role(tenant_id, 'tenant_admin') or public.is_platform_admin());
+create policy memberships_update on public.memberships for update to authenticated
+  using       (public.has_tenant_role(tenant_id, 'tenant_admin') or public.is_platform_admin())
+  with check  (public.has_tenant_role(tenant_id, 'tenant_admin') or public.is_platform_admin());
+create policy memberships_delete on public.memberships for delete to authenticated
+  using (public.has_tenant_role(tenant_id, 'tenant_admin') or public.is_platform_admin());
+
+-- support_grants: nur ein Kunden-Admin gibt frei, und nur fuer sich selbst als
+-- Erteiler. Ein Plattform-Admin kann sich den Einblick damit nicht selbst geben.
+create policy support_grants_select on public.support_grants for select to authenticated
+  using (public.is_member_of_any_status(tenant_id) or public.is_platform_admin());
+create policy support_grants_insert on public.support_grants for insert to authenticated
+  with check (public.has_tenant_role(tenant_id, 'tenant_admin') and granted_by = auth.uid());
+create policy support_grants_revoke on public.support_grants for update to authenticated
+  using      (public.has_tenant_role(tenant_id, 'tenant_admin'))
+  with check (public.has_tenant_role(tenant_id, 'tenant_admin'));
+```
+
+Die Regeln für `access_log` stehen in 3.7, der Schutz der Profilspalten in 3.8.
+
 Fachtabellen (Wissensbasis, Nachrichten, Gespräche, Termine) entstehen mit ihrem Feature,
 immer nach dem Muster aus 3.5.
 
@@ -471,13 +755,45 @@ Oberfläche.
 **nie mit Wert**.
 
 **Datenschutz-Rahmen**
-- Alle Kunden- und Endkundendaten liegen in der EU. Nachrichteninhalte, Kontaktdaten und
-  Wissensbasis verlassen die EU nie
-- **Eine bewusste Ausnahme:** Anmelde- und Hinweis-E-Mails laufen über Resend (USA) unter
-  Standardvertragsklauseln. Betroffen sind nur dienstliche Adressen von Mitarbeitenden,
-  keine Endkundendaten, und Benachrichtigungen enthalten keine Nachrichteninhalte. Resend
-  gehört in die Unterauftragnehmerliste und in den AVV
-- Vertragspartner gegenüber Kunden ist AWSMD, Deutschland
+
+**Rollen:** Der Betrieb ist Verantwortlicher, AWSMD ist Auftragsverarbeiter.
+
+**AWSMD sitzt in Dubai (VAE) — außerhalb der EU.** Für die Vereinigten Arabischen Emirate
+gibt es keinen Angemessenheitsbeschluss der EU-Kommission. Daraus folgt dreierlei:
+
+1. **Die DSGVO gilt trotzdem.** AWSMD bietet Dienste für Personen in der EU an und
+   verarbeitet im Auftrag von Verantwortlichen in der EU (Art. 3 Abs. 2 DSGVO). Der Sitz
+   außerhalb der EU befreit von nichts.
+2. **Ein Vertreter in der Union ist zu benennen** (Art. 27 DSGVO), schriftlich, und in der
+   Datenschutzerklärung zu nennen. Die Ausnahme für gelegentliche Verarbeitung greift
+   nicht, wenn laufend Gesprächsinhalte von Endkunden verarbeitet werden.
+3. **Jeder Zugriff aus Dubai auf die Daten ist eine Drittlandsübermittlung** — auch dann,
+   wenn die Daten physisch in Frankfurt liegen. Der AVV mit jedem Betrieb braucht
+   Standardvertragsklauseln und eine Risikoabschätzung für das Zielland.
+
+**Was technisch unverändert gilt:** Alle Kunden- und Endkundendaten werden in der EU
+gespeichert und verarbeitet (Supabase Frankfurt, EU-KI). Nachrichteninhalte, Kontaktdaten
+und Wissensbasis liegen nie auf Servern außerhalb der EU.
+
+**Warum der eingeschränkte Einblick dadurch wichtiger wird:** Weil Zugriff aus Dubai eine
+Übermittlung ist, ist jede Einschränkung dieses Zugriffs eine Einschränkung der
+Übermittlung. Dass AWSMD standardmäßig **keine** Inhalte sieht und Einblick nur nach
+befristeter Freigabe durch den Kunden erhält (Abschnitt 3.6), ist deshalb nicht Komfort,
+sondern die zentrale technische Maßnahme des ganzen Konzepts. Dasselbe gilt für das
+Protokoll: Es belegt gegenüber dem Kunden, wann überhaupt übermittelt wurde.
+
+**Eine bewusste zweite Ausnahme:** Anmelde- und Hinweis-E-Mails laufen über Resend (USA)
+unter Standardvertragsklauseln und dem EU-US Data Privacy Framework. Betroffen sind nur
+dienstliche Adressen von Mitarbeitenden, keine Endkundendaten, und Benachrichtigungen
+enthalten keine Nachrichteninhalte.
+
+**Weiter nötig:** AVV mit jedem Betrieb, öffentliche Unterauftragnehmerliste **mit Sitz je
+Dienstleister**, Löschkonzept mit Aufbewahrungsfristen, Auskunft und Löschung pro Kontakt
+im Admin.
+
+> Das ist keine Rechtsberatung. Der Vertreter nach Art. 27 und die Wahl der richtigen
+> Vertragsklauseln gehören zu einem Datenschutzbeauftragten oder einer Kanzlei — aber sie
+> sind zu klären, **bevor** der erste Kunde unterschreibt, nicht danach.
 
 ---
 
