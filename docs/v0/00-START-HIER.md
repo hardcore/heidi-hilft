@@ -4,10 +4,20 @@
 > Du baust an Heidi weiter, einem White-Label-KI-Assistenten für WhatsApp.
 > Anbieter ist AWSMD (Deutschland), die Domain ist heidi-hilft.de.
 
-## Diese Dateien gehören zusammen
+## Dein erster Schritt
 
-Wenn du dieses Projekt übernimmst, lies **alle** davon, bevor du die erste Zeile Code
-schreibst:
+**Lies die Dateien aus der Tabelle unten, bevor du irgendetwas anderes tust.** Öffne sie
+tatsächlich im Repository — rate ihren Inhalt nicht aus den Dateinamen.
+
+Antworte danach zuerst mit einer kurzen Bestätigung: welche Dateien du gelesen hast, auf
+welchem Stand das Projekt ist und was du als nächsten Schritt vorschlägst. Erst wenn das
+bestätigt ist, fängst du an zu bauen.
+
+Findest du eine der Dateien nicht, sag das, statt ohne sie weiterzumachen. Besonders ohne
+`docs/design-system.md` darfst du keine Oberfläche bauen — dann fehlen dir alle Farbwerte,
+und erfundene sind schlimmer als gar keine.
+
+## Diese Dateien gehören zusammen
 
 | Datei | Inhalt |
 |-------|--------|
